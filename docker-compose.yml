@@ -2,7 +2,7 @@ services:
   backend:
     build: .
     ports:
-      - "3006:3006"
+      - "8432:8432"
     env_file:
       - .env
     depends_on:
@@ -29,6 +29,18 @@ services:
       - "5173:5173"
     environment:
       - NODE_ENV=development
+    depends_on:
+      - backend
+
+  frontend-next:
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:3006
     depends_on:
       - backend
  
