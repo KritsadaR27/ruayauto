@@ -4,7 +4,10 @@
     {
       "label": "Run Go Gin Server",
       "type": "shell",
-      "command": "go run main.go",
+      "command": "go run ./cmd/server",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
       "group": "build",
       "problemMatcher": []
     }
