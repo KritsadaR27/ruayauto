@@ -68,7 +68,7 @@ export default function SettingsPanel({ settings, onUpdate }: Props) {
   }
 
   return (
-    <div className="card mb-6">
+    <div className="modern-card mb-6 fade-in-up">
       <div className="px-8 py-6 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           ⚙️ การตั้งค่าระบบ

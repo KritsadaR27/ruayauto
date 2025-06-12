@@ -37,12 +37,12 @@ services:
       context: ./frontend-next
       dockerfile: Dockerfile
     ports:
-      - "3001:3000"
+      - "3008:3008"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://backend:3006
     depends_on:
       - backend
- 
+
 volumes:
   pgdata:

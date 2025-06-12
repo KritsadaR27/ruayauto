@@ -8,13 +8,13 @@ export default function StatusCard({ title, status, description }: StatusCardPro
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
-        return 'bg-green-100 text-green-800 border-green-200'
+        return 'badge-success'
       case 'ready':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'badge-info'
       case 'checking':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        return 'badge-warning'
       case 'error':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'badge-error'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
@@ -25,9 +25,9 @@ export default function StatusCard({ title, status, description }: StatusCardPro
       case 'healthy':
         return '✅'
       case 'ready':
-        return '🟦'
+        return '🚀'
       case 'checking':
-        return '🟡'
+        return '⏳'
       case 'error':
         return '❌'
       default:
@@ -35,16 +35,37 @@ export default function StatusCard({ title, status, description }: StatusCardPro
     }
   }
 
+  const getGradientIcon = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return 'bg-gradient-to-br from-green-500 to-emerald-600'
+      case 'ready':
+        return 'bg-gradient-to-br from-blue-500 to-indigo-600'
+      case 'checking':
+        return 'bg-gradient-to-br from-amber-500 to-orange-600'
+      case 'error':
+        return 'bg-gradient-to-br from-red-500 to-rose-600'
+      default:
+        return 'bg-gradient-to-br from-gray-500 to-gray-600'
+    }
+  }
+
   return (
-    <div className="bg-white rounded-xl shadow-lg border-2 border-gray-100 p-4 hover:shadow-xl hover:border-gray-200 transition-all duration-300 hover:-translate-y-1">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-medium text-gray-900">{title}</h3>
-        <span className="text-lg">{getStatusIcon(status)}</span>
+    <div className="modern-card p-6 fade-in-up">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <div className={`w-8 h-8 ${getGradientIcon(status)} rounded-xl flex items-center justify-center shadow-md`}>
+            <span className="text-white text-sm">{getStatusIcon(status)}</span>
+          </div>
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+        </div>
       </div>
-      <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)} inline-block`}>
+      
+      <div className={`badge ${getStatusColor(status)} mb-3`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </div>
-      <p className="text-sm text-gray-600 mt-2">{description}</p>
+      
+      <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
     </div>
   )
 }

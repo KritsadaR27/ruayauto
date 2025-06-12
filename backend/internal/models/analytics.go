@@ -55,7 +55,7 @@ func (r *AnalyticsRepository) LogMessage(ctx context.Context, analytics *Message
 		RETURNING id, created_at
 	`
 
-	err := r.db.QueryRow(ctx, query,
+	err := r.db.Pool.QueryRow(ctx, query,
 		analytics.FacebookMessageID,
 		analytics.SenderID,
 		analytics.RecipientID,
@@ -81,7 +81,7 @@ func (r *AnalyticsRepository) LogWebhook(ctx context.Context, log *WebhookLog) e
 		RETURNING id, created_at
 	`
 
-	err := r.db.QueryRow(ctx, query,
+	err := r.db.Pool.QueryRow(ctx, query,
 		log.WebhookType,
 		log.RequestBody,
 		log.ResponseStatus,
@@ -118,7 +118,7 @@ func (r *AnalyticsRepository) GetMessageStats(ctx context.Context, from, to time
 		AvgResponseTimeMs   *float64 `db:"avg_response_time_ms"`
 	}
 
-	err := r.db.QueryRow(ctx, query, from, to).Scan(
+	err := r.db.Pool.QueryRow(ctx, query, from, to).Scan(
 		&stats.TotalMessages,
 		&stats.UniqueSenders,
 		&stats.MatchedMessages,
@@ -154,7 +154,7 @@ func (r *AnalyticsRepository) GetTopKeywords(ctx context.Context, limit int, fro
 		LIMIT $3
 	`
 
-	rows, err := r.db.Query(ctx, query, from, to, limit)
+	rows, err := r.db.Pool.Query(ctx, query, from, to, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get top keywords: %w", err)
 	}
@@ -191,7 +191,7 @@ func (r *AnalyticsRepository) GetRecentWebhookLogs(ctx context.Context, limit in
 		LIMIT $1
 	`
 
-	rows, err := r.db.Query(ctx, query, limit)
+	rows, err := r.db.Pool.Query(ctx, query, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get webhook logs: %w", err)
 	}

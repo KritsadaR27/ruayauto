@@ -154,7 +154,7 @@ export default function HomePage() {
             <div className="flex gap-3">
               <button
                 onClick={handleAddNewPair}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-gradient-to-r from-green-500 to-emerald-500 text-white border-transparent hover:from-green-600 hover:to-emerald-600 hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:scale-95"
+                className="btn-modern btn-success"
                 type="button"
               >
                 <PlusIcon className="h-5 w-5 mr-2" />

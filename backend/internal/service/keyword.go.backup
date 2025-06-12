@@ -1,0 +1,146 @@
+package service
+
+import (
+"context"
+"fmt"
+"strings"
+
+"ruayautomsg/internal/models"
+"ruayautomsg/internal/repository"
+)
+
+// KeywordService provides business logic for keyword operations
+type KeywordService struct {
+	repo repository.KeywordRepository
+}
+
+// NewKeywordService creates a new keyword service
+func NewKeywordService(repo repository.KeywordRepository) *KeywordService {
+
+// GetRepository returns the underlying repository (for integration with other services)
+func (s *KeywordService) GetRepository() repository.KeywordRepository {
+return s.repo
+}	return &KeywordService{
+		repo: repo,
+	}
+}
+
+// GetAllKeywords retrieves all active keywords
+func (s *KeywordService) GetAllKeywords(ctx context.Context) ([]models.Keyword, error) {
+	return s.repo.GetAll(ctx)
+}
+
+// CreateKeyword creates a new keyword with validation
+func (s *KeywordService) CreateKeyword(ctx context.Context, keyword, response string) error {
+	// Validate input
+	if err := s.validateKeywordInput(keyword, response); err != nil {
+		return err
+	}
+
+	// Check if keyword already exists
+	existing, err := s.repo.GetByKeyword(ctx, keyword)
+	if err != nil {
+		return fmt.Errorf("failed to check existing keyword: %w", err)
+	}
+	if existing != nil {
+		return fmt.Errorf("keyword '%s' already exists", keyword)
+	}
+
+	// Create new keyword
+	newKeyword := models.Keyword{
+		Keyword:  strings.TrimSpace(keyword),
+		Response: strings.TrimSpace(response),
+		IsActive: true,
+	}
+
+	return s.repo.Create(ctx, newKeyword)
+}
+
+// UpsertKeyword creates or updates a keyword
+func (s *KeywordService) UpsertKeyword(ctx context.Context, keyword, response string) error {
+	// Validate input
+	if err := s.validateKeywordInput(keyword, response); err != nil {
+		return err
+	}
+
+	return s.repo.UpsertKeyword(ctx, strings.TrimSpace(keyword), strings.TrimSpace(response))
+}
+
+// MatchMessage matches an incoming message against stored keywords
+func (s *KeywordService) MatchMessage(ctx context.Context, message string) (string, bool) {
+	// Get all keywords from database
+	keywords, err := s.repo.GetAll(ctx)
+	if err != nil {
+		return "", false
+	}
+
+	// Convert message to lowercase for case-insensitive matching
+	lowerMessage := strings.ToLower(strings.TrimSpace(message))
+	
+	// Find matching keywords
+	for _, keyword := range keywords {
+		lowerKeyword := strings.ToLower(keyword.Keyword)
+		if strings.Contains(lowerMessage, lowerKeyword) {
+			return keyword.Response, true
+		}
+	}
+
+	return "", false
+}
+
+// GetKeywordStats returns statistics about keywords
+func (s *KeywordService) GetKeywordStats(ctx context.Context) (map[string]interface{}, error) {
+	keywords, err := s.repo.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keywords for stats: %w", err)
+	}
+
+	stats := map[string]interface{}{
+		"total_active_keywords": len(keywords),
+		"average_keyword_length": 0,
+		"average_response_length": 0,
+	}
+
+	if len(keywords) == 0 {
+		return stats, nil
+	}
+
+	totalKeywordLength := 0
+	totalResponseLength := 0
+
+	for _, keyword := range keywords {
+		totalKeywordLength += len(keyword.Keyword)
+		totalResponseLength += len(keyword.Response)
+	}
+
+	stats["average_keyword_length"] = totalKeywordLength / len(keywords)
+	stats["average_response_length"] = totalResponseLength / len(keywords)
+
+	return stats, nil
+}
+
+// validateKeywordInput validates keyword and response input
+func (s *KeywordService) validateKeywordInput(keyword, response string) error {
+	keyword = strings.TrimSpace(keyword)
+	response = strings.TrimSpace(response)
+
+	if keyword == "" {
+		return fmt.Errorf("keyword cannot be empty")
+	}
+	if response == "" {
+		return fmt.Errorf("response cannot be empty")
+	}
+	if len(keyword) > 255 {
+		return fmt.Errorf("keyword too long: maximum 255 characters, got %d", len(keyword))
+	}
+	if len(response) > 10000 {
+		return fmt.Errorf("response too long: maximum 10000 characters, got %d", len(response))
+	}
+
+	// Check for invalid characters in keyword
+	if strings.ContainsAny(keyword, "\n\r\t") {
+		return fmt.Errorf("keyword cannot contain newlines or tabs")
+	}
+
+	return nil
+}

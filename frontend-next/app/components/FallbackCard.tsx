@@ -108,7 +108,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-blue-300 mb-6 overflow-hidden bg-gradient-to-br from-blue-50 to-sky-50">
+    <div className="modern-card mb-6 overflow-hidden bg-gradient-to-br from-blue-50 to-sky-50 border-2 border-blue-300 fade-in-up">
       <div className="px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3 flex-1">
@@ -199,7 +199,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                         <button
                           type="button"
                           onClick={() => responseImageRefs.current[ridx]?.click()}
-                          className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md transition-all duration-200 bg-gradient-to-r from-amber-500 to-amber-600 text-white border-transparent hover:from-amber-600 hover:to-amber-700 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 active:scale-95"
+                          className="btn-small-indigo"
                         >
                           <PhotoIcon className="h-3 w-3 mr-1" />
                           {response.image ? 'เปลี่ยนรูป' : 'เพิ่มรูป'}
@@ -234,7 +234,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
               <div className="mt-3 pt-3 border-t border-amber-200">
                 <button 
                   onClick={addResponse}
-                  className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md transition-all duration-200 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent hover:from-amber-600 hover:to-orange-600 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 active:scale-95"
+                  className="btn-small-indigo"
                 >
                   <PlusIcon className="h-3 w-3 mr-1" />
                   เพิ่มคำตอบ
@@ -324,7 +324,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                       <button
                         type="button"
                         onClick={() => inboxImageRef.current?.click()}
-                        className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md transition-all duration-200 bg-gradient-to-r from-amber-500 to-amber-600 text-white border-transparent hover:from-amber-600 hover:to-amber-700 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 active:scale-95"
+                        className="btn-small-indigo"
                       >
                         <PhotoIcon className="h-3 w-3 mr-1" />
                         เลือกรูป

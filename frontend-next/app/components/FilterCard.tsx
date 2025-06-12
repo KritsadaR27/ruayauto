@@ -23,7 +23,7 @@ export default function FilterCard({ settings, onUpdate }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-orange-300 mb-6 overflow-hidden bg-gradient-to-br from-orange-50 to-red-50 hover:shadow-2xl hover:border-orange-400 transition-all duration-300 hover:-translate-y-1">
+    <div className="modern-card mb-6 overflow-hidden bg-gradient-to-br from-orange-50 to-red-50 border-2 border-orange-300 hover:border-orange-400 transition-all duration-300 hover:-translate-y-1 fade-in-up">
       <div className="px-8 py-6">
         <div className="flex items-center mb-6">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center">

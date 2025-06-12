@@ -225,7 +225,7 @@ export default function KeywordPairCard({ pair, index, onUpdate, onDelete }: Pro
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-100 mb-6 overflow-hidden hover:shadow-2xl hover:border-gray-200 transition-all duration-300 hover:-translate-y-1" data-pair-index={index}>
+    <div className="modern-card mb-6 overflow-hidden hover:shadow-2xl hover:border-gray-200 transition-all duration-300 hover:-translate-y-1 fade-in-up" data-pair-index={index}>
       <div className="px-8 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2 flex-1">
@@ -272,13 +272,13 @@ export default function KeywordPairCard({ pair, index, onUpdate, onDelete }: Pro
                 <span className="text-red-700 text-sm font-medium">ลบรายการนี้?</span>
                 <button 
                   onClick={handleDeleteConfirm}
-                  className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors"
+                  className="btn-small-red"
                 >
                   ลบ
                 </button>
                 <button 
                   onClick={handleDeleteCancel}
-                  className="px-2 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition-colors"
+                  className="btn-small-gray"
                 >
                   ยกเลิก
                 </button>
@@ -562,7 +562,7 @@ export default function KeywordPairCard({ pair, index, onUpdate, onDelete }: Pro
                     <button
                       type="button"
                       onClick={() => inboxImageRef.current?.click()}
-                      className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md transition-all duration-200 bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent hover:from-blue-600 hover:to-blue-700 hover:shadow-md hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 active:scale-95"
+                      className="btn-small-indigo"
                     >
                       <PhotoIcon className="h-3 w-3 mr-1" />
                       เลือกรูป

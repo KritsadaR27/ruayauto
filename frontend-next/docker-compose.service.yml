@@ -5,7 +5,7 @@
       context: ./frontend-next
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3008:3008"
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://backend:3006

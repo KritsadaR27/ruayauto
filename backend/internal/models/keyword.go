@@ -40,7 +40,7 @@ func (r *KeywordRepository) GetAll(ctx context.Context) ([]Keyword, error) {
 		ORDER BY keyword ASC
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Pool.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query keywords: %w", err)
 	}
@@ -72,7 +72,7 @@ func (r *KeywordRepository) GetByKeyword(ctx context.Context, keyword string) (*
 	`
 
 	var k Keyword
-	err := r.db.QueryRow(ctx, query, keyword).Scan(
+	err := r.db.Pool.QueryRow(ctx, query, keyword).Scan(
 		&k.ID, &k.Keyword, &k.Response, &k.IsActive, &k.CreatedAt, &k.UpdatedAt,
 	)
 	if err != nil {
@@ -93,7 +93,7 @@ func (r *KeywordRepository) Create(ctx context.Context, keyword *Keyword) error 
 		RETURNING id, created_at, updated_at
 	`
 
-	err := r.db.QueryRow(ctx, query, keyword.Keyword, keyword.Response, keyword.IsActive).Scan(
+	err := r.db.Pool.QueryRow(ctx, query, keyword.Keyword, keyword.Response, keyword.IsActive).Scan(
 		&keyword.ID, &keyword.CreatedAt, &keyword.UpdatedAt,
 	)
 	if err != nil {
@@ -112,7 +112,7 @@ func (r *KeywordRepository) Update(ctx context.Context, keyword *Keyword) error 
 		RETURNING updated_at
 	`
 
-	err := r.db.QueryRow(ctx, query, keyword.Keyword, keyword.Response, keyword.IsActive, keyword.ID).Scan(
+	err := r.db.Pool.QueryRow(ctx, query, keyword.Keyword, keyword.Response, keyword.IsActive, keyword.ID).Scan(
 		&keyword.UpdatedAt,
 	)
 	if err != nil {
@@ -163,7 +163,7 @@ func (r *KeywordRepository) SearchKeywords(ctx context.Context, searchTerm strin
 		ORDER BY keyword ASC
 	`
 
-	rows, err := r.db.Query(ctx, query, "%"+searchTerm+"%")
+	rows, err := r.db.Pool.Query(ctx, query, "%"+searchTerm+"%")
 	if err != nil {
 		return nil, fmt.Errorf("failed to search keywords: %w", err)
 	}

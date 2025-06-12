@@ -71,7 +71,12 @@ export async function loadKeywordData(): Promise<ApiResponse<KeywordData>> {
       defaultResponses: ['ขอบคุณสำหรับข้อความครับ', 'ได้รับข้อความแล้วครับ'],
       enableDefault: true,
       noTag: false,
-      noSticker: false
+      noSticker: false,
+      hideCommentsAfterReply: false,
+      enableInboxIntegration: false,
+      inboxResponse: '',
+      filterSettings: { skipMentions: false, skipStickers: false },
+      fallbackSettings: { enabled: false, responses: [{ text: '' }] }
     }
     
     return {

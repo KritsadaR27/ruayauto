@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3006:3006"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app/backend
+    environment:
+      - ENV=development
+      - PORT=3006
+
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ruayAutoMsg
+      POSTGRES_USER: ruay
+      POSTGRES_PASSWORD: ruay1234
+    ports:
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./keyword_responses.sql:/docker-entrypoint-initdb.d/keyword_responses.sql:ro
+
+  frontend-next-dev:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend-next:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3008:3008"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3006
+      - PORT=3008
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+volumes:
+  pgdata:
