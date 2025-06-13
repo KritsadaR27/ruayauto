@@ -1,0 +1,11 @@
+go 1.23
+
+use (
+	./libs/common
+	./libs/transport
+	./libs/monitoring
+	./services/api-gateway
+	./services/chatbot-core
+	./services/facebook-connector
+	./services/analytics
+)

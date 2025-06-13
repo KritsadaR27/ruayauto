@@ -37,11 +37,11 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
   // Auto-save when data changes
   useEffect(() => {
     const updatedSettings: FallbackSettings = {
-      enabled: settings.enabled,
+      ...settings,
       responses: editingResponses.filter(r => r.text.trim() !== '')
     }
     onUpdate(updatedSettings)
-  }, [editingResponses, settings.enabled])
+  }, [editingResponses])
 
   const handleResponseChange = (ridx: number, value: string) => {
     setEditingResponses(prev => prev.map((r, i) => 

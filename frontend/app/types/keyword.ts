@@ -14,6 +14,9 @@ export type Pair = {
   enableInboxIntegration?: boolean
   inboxResponse?: string
   inboxImage?: string
+  // New design properties
+  enabled?: boolean // Toggle for enabling/disabling the rule
+  expanded?: boolean // Toggle for expanding/collapsing the card
 }
 
 export type FilterSettings = {

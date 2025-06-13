@@ -10,6 +10,8 @@ backend/bin/
 backend/server
 backend/migrate
 backend/tmp/
+dist/
+build/
 
 # Documentation (reduce context)
 *.md
@@ -39,3 +41,26 @@ tests/
 # Large generated files
 package-lock.json
 go.sum
+
+# Files and directories to ignore for Copilot context
+node_modules/
+frontend/.next/
+dist/
+build/
+*.log
+*.tmp
+*.temp
+*.test
+*.out
+*.exe
+*.dll
+*.so
+*.dylib
+*.swp
+*.swo
+*~
+.DS_Store
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

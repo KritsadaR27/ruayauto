@@ -12,7 +12,14 @@
     "**/.DS_Store": true,
     "**/Thumbs.db": true,
     "**/package-lock.json": true,
-    "**/go.sum": true
+    "**/go.sum": true,
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "node_modules/": true,
+    "dist/": true,
+    "frontend/.next/": true
   },
   "files.watcherExclude": {
     "**/node_modules/**": true,
@@ -22,7 +29,12 @@
     "**/server/**": true,
     "**/migrate/**": true,
     "**/tmp/**": true,
-    "**/*.log": true
+    "**/*.log": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/dist/*/**": true,
+    "**/frontend/.next/*/**": true
   },
   "search.exclude": {
     "**/node_modules": true,
@@ -33,7 +45,11 @@
     "**/tmp": true,
     "**/*.log": true,
     "**/package-lock.json": true,
-    "**/go.sum": true
+    "**/go.sum": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/dist": true,
+    "**/frontend/.next": true
   },
   "typescript.preferences.excludePackageJsonAutoImports": "on",
   "typescript.suggest.autoImports": false,

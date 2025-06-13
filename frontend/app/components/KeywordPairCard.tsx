@@ -1,3 +1,5 @@
+// This file is deprecated. Please use KeywordPairCard-redesigned.tsx instead.
+
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
@@ -8,7 +10,11 @@ import {
   EyeSlashIcon,
   InboxIcon,
   CogIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  ChevronDownIcon,
+  PencilIcon,
+  CheckIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import type { Pair, Response } from '../types/keyword'
 
@@ -41,6 +47,8 @@ export default function KeywordPairCard({ pair, index, onUpdate, onDelete }: Pro
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editingTitle, setEditingTitle] = useState(pair.title || `รายการที่ ${index + 1}`)
   const [hasManuallyEditedTitle, setHasManuallyEditedTitle] = useState(pair.hasManuallyEditedTitle || false)
+  const [isExpanded, setIsExpanded] = useState(pair.expanded !== false) // Default to expanded
+  const [isEnabled, setIsEnabled] = useState(pair.enabled !== false) // Default to enabled
   const keywordInputRef = useRef<HTMLInputElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const responseImageRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
@@ -87,10 +95,12 @@ export default function KeywordPairCard({ pair, index, onUpdate, onDelete }: Pro
       title: editingTitle,
       hasManuallyEditedTitle,
       keywords: editingKeywords.filter(k => k.trim() !== ''),
-      responses: editingResponses.filter(r => r.text.trim() !== '')
+      responses: editingResponses.filter(r => r.text.trim() !== ''),
+      enabled: isEnabled,
+      expanded: isExpanded
     }
     onUpdate(index, updatedPair)
-  }, [editingKeywords, editingResponses, editingTitle, hasManuallyEditedTitle])
+  }, [editingKeywords, editingResponses, editingTitle, hasManuallyEditedTitle, isEnabled, isExpanded])
 
   const handleKeywordChange = (kidx: number, value: string) => {
     setEditingKeywords(prev => prev.map((k, i) => i === kidx ? value : k))
@@ -225,47 +235,97 @@ export default function KeywordPairCard({ pair, index, onUpdate, onDelete }: Pro
   }
 
   return (
-    <div className="modern-card mb-6 overflow-hidden hover:shadow-2xl hover:border-gray-200 transition-all duration-300 hover:-translate-y-1 fade-in-up" data-pair-index={index}>
-      <div className="px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-2 flex-1">
-            <span className="text-lg">📝</span>
-            {isEditingTitle ? (
+    <div 
+      className={`bg-white rounded-2xl shadow-xl border-0 mb-6 overflow-hidden transition-all duration-300 ${
+        !isEnabled ? 'opacity-60' : 'hover:shadow-2xl hover:-translate-y-1'
+      }`}
+      data-pair-index={index}
+    >
+      {/* Header with Toggle, Title, Stats, and Controls */}
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            {/* Toggle Switch */}
+            <label className="relative inline-flex items-center cursor-pointer">
               <input
-                ref={titleInputRef}
-                type="text"
-                value={editingTitle}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                onKeyDown={handleTitleKeyDown}
-                onBlur={handleTitleBlur}
-                className="text-lg font-semibold text-gray-900 bg-transparent border-b-2 border-indigo-300 focus:border-indigo-500 focus:outline-none px-1 py-1 min-w-[200px]"
-                placeholder="ชื่อรายการ"
+                type="checkbox"
+                checked={isEnabled}
+                onChange={(e) => setIsEnabled(e.target.checked)}
+                className="sr-only peer"
               />
-            ) : (
-              <h3 
-                className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-indigo-600 transition-colors px-1 py-1"
-                onClick={() => setIsEditingTitle(true)}
-                title="คลิกเพื่อแก้ไขชื่อ"
-              >
-                {editingTitle}
-              </h3>
-            )}
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+
+            {/* Title (Editable) */}
+            <div className="flex items-center space-x-2 flex-1">
+              <span className="text-lg">📝</span>
+              {isEditingTitle ? (
+                <div className="flex items-center space-x-2">
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    value={editingTitle}
+                    onChange={(e) => handleTitleChange(e.target.value)}
+                    onKeyDown={handleTitleKeyDown}
+                    onBlur={handleTitleBlur}
+                    className="text-lg font-semibold text-gray-900 bg-white border border-gray-300 rounded-lg px-3 py-1 focus:border-blue-500 focus:outline-none min-w-[200px]"
+                    placeholder="ชื่อรายการ"
+                  />
+                  <button
+                    onClick={() => setIsEditingTitle(false)}
+                    className="p-1 text-green-600 hover:text-green-700 transition-colors"
+                  >
+                    <CheckIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {editingTitle}
+                  </h3>
+                  <button
+                    onClick={() => setIsEditingTitle(true)}
+                    className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                    title="คลิกเพื่อแก้ไขชื่อ"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                {editingKeywords.filter(k => k.trim()).length} คีย์เวิร์ด
+              </span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                {editingResponses.filter(r => r.text.trim()).length} คำตอบ
+              </span>
+            </div>
           </div>
+
+          {/* Control Buttons */}
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-              title="ตั้งค่ารายการนี้"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              title={isExpanded ? "ย่อรายการ" : "ขยายรายการ"}
             >
-              <CogIcon className="h-4 w-4" />
+              {isExpanded ? (
+                <ChevronUpIcon className="h-5 w-5" />
+              ) : (
+                <ChevronDownIcon className="h-5 w-5" />
+              )}
             </button>
+            
             {!showDeleteConfirm ? (
               <button 
                 onClick={() => setShowDeleteConfirm(true)}
                 className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                 title="ลบรายการนี้"
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="h-5 w-5" />
               </button>
             ) : (
               <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
