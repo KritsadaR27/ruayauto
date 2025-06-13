@@ -3,6 +3,14 @@ export type Response = {
   image?: string // URL or base64 image for this specific response
 }
 
+export type ConnectedPage = {
+  id: string
+  name: string
+  pageId: string
+  connected: boolean
+  enabled: boolean
+}
+
 export type Pair = {
   id?: string // Add unique ID for each pair
   title?: string // Custom title for each pair 
@@ -17,6 +25,8 @@ export type Pair = {
   // New design properties
   enabled?: boolean // Toggle for enabling/disabling the rule
   expanded?: boolean // Toggle for expanding/collapsing the card
+  // Multi-page support
+  selectedPages?: string[] // Array of page IDs this rule applies to
 }
 
 export type FilterSettings = {
@@ -27,6 +37,12 @@ export type FilterSettings = {
 export type FallbackSettings = {
   enabled: boolean
   responses: Response[]
+  // Multi-page support for fallback
+  selectedPages?: string[]
+  hideAfterReply?: boolean
+  sendToInbox?: boolean
+  inboxMessage?: string
+  inboxImage?: string
 }
 
 export type Settings = {
