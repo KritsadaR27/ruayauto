@@ -6,45 +6,67 @@ import (
 	"time"
 )
 
-// Keyword represents a keyword-response mapping
+// Conversation represents a conversation record
+type Conversation struct {
+	ID               int                    `json:"id" db:"id"`
+	PageID           string                 `json:"page_id" db:"page_id"`
+	FacebookUserID   string                 `json:"facebook_user_id" db:"facebook_user_id"`
+	FacebookUserName *string                `json:"facebook_user_name" db:"facebook_user_name"`
+	SourceType       string                 `json:"source_type" db:"source_type"` // comment, message
+	PostID           *string                `json:"post_id" db:"post_id"`
+	StartedAt        time.Time              `json:"started_at" db:"started_at"`
+	LastMessageAt    time.Time              `json:"last_message_at" db:"last_message_at"`
+	Status           string                 `json:"status" db:"status"` // active, paused, closed
+	CreatedAt        time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at" db:"updated_at"`
+}
+
+// Message represents a message record
+type Message struct {
+	ID             int                    `json:"id" db:"id"`
+	ConversationID int                    `json:"conversation_id" db:"conversation_id"`
+	MessageID      *string                `json:"message_id" db:"message_id"`
+	SenderType     string                 `json:"sender_type" db:"sender_type"` // user, bot
+	Content        *string                `json:"content" db:"content"`
+	MessageType    string                 `json:"message_type" db:"message_type"` // text, image, sticker, video, audio, file
+	Metadata       map[string]interface{} `json:"metadata" db:"metadata"`
+	CreatedAt      time.Time              `json:"created_at" db:"created_at"`
+	ProcessedAt    *time.Time             `json:"processed_at" db:"processed_at"`
+	ResponseTimeMs *int                   `json:"response_time_ms" db:"response_time_ms"`
+}
+
+// Keyword represents a keyword record
 type Keyword struct {
 	ID        int       `json:"id" db:"id"`
 	Keyword   string    `json:"keyword" db:"keyword"`
 	Response  string    `json:"response" db:"response"`
+	MatchType string    `json:"match_type" db:"match_type"` // exact, contains
+	Priority  int       `json:"priority" db:"priority"`
+	Active    bool      `json:"active" db:"active"`
 	IsActive  bool      `json:"is_active" db:"is_active"`
 	CreatedAt time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
-// KeywordPair represents a pair of keywords and responses for bulk operations
-type KeywordPair struct {
-	Keywords  []string `json:"keywords"`
-	Responses []string `json:"responses"`
+// ResponseTemplate represents a response template record
+type ResponseTemplate struct {
+	ID           int                    `json:"id" db:"id"`
+	Name         string                 `json:"name" db:"name"`
+	ResponseType string                 `json:"response_type" db:"response_type"` // text, image, button, carousel, quick_reply
+	Content      string                 `json:"content" db:"content"`
+	Metadata     map[string]interface{} `json:"metadata" db:"metadata"`
+	Active       bool                   `json:"active" db:"active"`
+	CreatedAt    time.Time              `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time              `json:"updated_at" db:"updated_at"`
 }
 
-// MessageAnalytics represents a message interaction record
-type MessageAnalytics struct {
-	ID                  int       `json:"id" db:"id"`
-	FacebookMessageID   *string   `json:"facebook_message_id" db:"facebook_message_id"`
-	SenderID            string    `json:"sender_id" db:"sender_id"`
-	RecipientID         string    `json:"recipient_id" db:"recipient_id"`
-	MessageText         *string   `json:"message_text" db:"message_text"`
-	MatchedKeyword      *string   `json:"matched_keyword" db:"matched_keyword"`
-	ResponseSent        *string   `json:"response_sent" db:"response_sent"`
-	ResponseTimeMs      *int      `json:"response_time_ms" db:"response_time_ms"`
-	CreatedAt           time.Time `json:"created_at" db:"created_at"`
-}
-
-// WebhookLog represents a webhook request/response log
-type WebhookLog struct {
-	ID               int             `json:"id" db:"id"`
-	WebhookType      string          `json:"webhook_type" db:"webhook_type"`
-	RequestBody      json.RawMessage `json:"request_body" db:"request_body"`
-	ResponseStatus   *int            `json:"response_status" db:"response_status"`
-	ResponseBody     *string         `json:"response_body" db:"response_body"`
-	ProcessingTimeMs *int            `json:"processing_time_ms" db:"processing_time_ms"`
-	ErrorMessage     *string         `json:"error_message" db:"error_message"`
-	CreatedAt        time.Time       `json:"created_at" db:"created_at"`
+// KeywordResponse represents the keyword-response mapping
+type KeywordResponse struct {
+	KeywordID          int       `json:"keyword_id" db:"keyword_id"`
+	ResponseTemplateID int       `json:"response_template_id" db:"response_template_id"`
+	OrderIndex         int       `json:"order_index" db:"order_index"`
+	Active             bool      `json:"active" db:"active"`
+	CreatedAt          time.Time `json:"created_at" db:"created_at"`
 }
 
 // CommentData represents processed comment data

@@ -1,21 +1,22 @@
-package handlers
+package handler
 
 import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"ruaymanagement/backend/internal/ChatBotCore/models"
-	"ruaymanagement/backend/internal/ChatBotCore/services"
+	service "ruaymanagement/backend/internal/ChatBotCore/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ChatBotHandler handles HTTP requests for chatbot operations
 type ChatBotHandler struct {
-	chatbotService *services.ChatBotService
+	chatbotService *service.ChatBotService
 }
 
 // NewChatBotHandler creates a new chatbot handler
-func NewChatBotHandler(chatbotService *services.ChatBotService) *ChatBotHandler {
+func NewChatBotHandler(chatbotService *service.ChatBotService) *ChatBotHandler {
 	return &ChatBotHandler{
 		chatbotService: chatbotService,
 	}

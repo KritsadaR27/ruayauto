@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"database/sql"
+	"ruaymanagement/backend/internal/ChatBotCore/database"
 )
 
 // Repositories holds all repository instances
@@ -14,7 +14,7 @@ type Repositories struct {
 }
 
 // NewRepositories creates a new Repositories instance with all repositories
-func NewRepositories(db *sql.DB) *Repositories {
+func NewRepositories(db *database.DB) *Repositories {
 	return &Repositories{
 		Conversation:     NewConversationRepository(db),
 		Message:          NewMessageRepository(db),

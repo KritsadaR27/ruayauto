@@ -2,17 +2,18 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
+	"ruaymanagement/backend/internal/ChatBotCore/database"
 	"ruaymanagement/backend/internal/ChatBotCore/models"
 )
 
 type responseTemplateRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewResponseTemplateRepository(db *sql.DB) ResponseTemplateRepository {
+func NewResponseTemplateRepository(db *database.DB) ResponseTemplateRepository {
 	return &responseTemplateRepository{db: db}
 }
 
@@ -24,7 +25,7 @@ func (r *responseTemplateRepository) Create(ctx context.Context, template *model
 		RETURNING id, created_at
 	`
 
-	err := r.db.QueryRowContext(
+	err := r.db.Pool.QueryRow(
 		ctx, query,
 		template.Name,
 		template.TemplateType,
@@ -49,7 +50,7 @@ func (r *responseTemplateRepository) GetByID(ctx context.Context, id int) (*mode
 		WHERE id = $1
 	`
 
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
 		&template.ID,
 		&template.Name,
 		&template.TemplateType,
@@ -61,7 +62,7 @@ func (r *responseTemplateRepository) GetByID(ctx context.Context, id int) (*mode
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("response template not found")
 		}
 		return nil, fmt.Errorf("failed to get response template: %w", err)
@@ -80,7 +81,7 @@ func (r *responseTemplateRepository) GetByName(ctx context.Context, name string)
 		WHERE template_name = $1
 	`
 
-	err := r.db.QueryRowContext(ctx, query, name).Scan(
+	err := r.db.Pool.QueryRow(ctx, query, name).Scan(
 		&template.ID,
 		&template.Name,
 		&template.TemplateType,
@@ -92,7 +93,7 @@ func (r *responseTemplateRepository) GetByName(ctx context.Context, name string)
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("response template with name '%s' not found", name)
 		}
 		return nil, fmt.Errorf("failed to get response template by name: %w", err)
@@ -110,7 +111,7 @@ func (r *responseTemplateRepository) List(ctx context.Context, offset, limit int
 		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	rows, err := r.db.Pool.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list response templates: %w", err)
 	}
@@ -152,7 +153,7 @@ func (r *responseTemplateRepository) GetActive(ctx context.Context) ([]models.Re
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.Pool.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active response templates: %w", err)
 	}
@@ -194,7 +195,7 @@ func (r *responseTemplateRepository) GetByType(ctx context.Context, templateType
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, templateType)
+	rows, err := r.db.Pool.Query(ctx, query, templateType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get response templates by type: %w", err)
 	}
@@ -234,7 +235,7 @@ func (r *responseTemplateRepository) Update(ctx context.Context, template *model
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(
+	result, err := r.db.Pool.Exec(
 		ctx, query,
 		template.ID,
 		template.Name,
@@ -248,11 +249,7 @@ func (r *responseTemplateRepository) Update(ctx context.Context, template *model
 		return fmt.Errorf("failed to update response template: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
+	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		return fmt.Errorf("response template not found")
 	}
@@ -263,16 +260,12 @@ func (r *responseTemplateRepository) Update(ctx context.Context, template *model
 func (r *responseTemplateRepository) Delete(ctx context.Context, id int) error {
 	query := `DELETE FROM chatbot_mvp.response_templates WHERE id = $1`
 
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.Pool.Exec(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete response template: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
+	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		return fmt.Errorf("response template not found")
 	}
@@ -284,7 +277,7 @@ func (r *responseTemplateRepository) Count(ctx context.Context) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM chatbot_mvp.response_templates`
 
-	err := r.db.QueryRowContext(ctx, query).Scan(&count)
+	err := r.db.Pool.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count response templates: %w", err)
 	}
@@ -299,16 +292,12 @@ func (r *responseTemplateRepository) SetActive(ctx context.Context, id int, isAc
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, id, isActive)
+	result, err := r.db.Pool.Exec(ctx, query, id, isActive)
 	if err != nil {
 		return fmt.Errorf("failed to set response template active status: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
+	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		return fmt.Errorf("response template not found")
 	}
@@ -325,7 +314,7 @@ func (r *responseTemplateRepository) GetAll(ctx context.Context) ([]models.Respo
 		ORDER BY created_at DESC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.Pool.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get all response templates: %w", err)
 	}
@@ -365,16 +354,12 @@ func (r *responseTemplateRepository) ToggleActive(ctx context.Context, id int, i
 		WHERE id = $1
 	`
 
-	result, err := r.db.ExecContext(ctx, query, id, isActive)
+	result, err := r.db.Pool.Exec(ctx, query, id, isActive)
 	if err != nil {
 		return fmt.Errorf("failed to toggle response template active status: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
+	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
 		return fmt.Errorf("response template not found")
 	}

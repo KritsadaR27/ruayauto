@@ -43,18 +43,24 @@ type MessageRepository interface {
 // KeywordRepository handles keyword data operations
 type KeywordRepository interface {
 	// Basic CRUD operations
-	Create(ctx context.Context, keyword *models.Keyword) error
-	GetByID(ctx context.Context, id int) (*models.Keyword, error)
-	Update(ctx context.Context, keyword *models.Keyword) error
+	Create(ctx context.Context, keyword models.SimpleKeyword) error
+	GetByID(ctx context.Context, id int) (*models.SimpleKeyword, error)
+	Update(ctx context.Context, id int, keyword models.SimpleKeyword) error
 	Delete(ctx context.Context, id int) error
 
 	// List and search operations
-	List(ctx context.Context, offset, limit int) ([]models.Keyword, error)
-	GetActive(ctx context.Context) ([]models.Keyword, error)
+	GetAll(ctx context.Context) ([]models.SimpleKeyword, error)
+	GetActive(ctx context.Context) ([]models.SimpleKeyword, error)
+	List(ctx context.Context, offset, limit int) ([]models.SimpleKeyword, error)
 	Count(ctx context.Context) (int, error)
 
+	// Specific lookup operations
+	GetByKeyword(ctx context.Context, keyword string) (*models.SimpleKeyword, error)
+	UpsertKeyword(ctx context.Context, keyword, response string) error
+	SearchKeywords(ctx context.Context, searchTerm string) ([]models.SimpleKeyword, error)
+
 	// Matching operations
-	FindMatchingKeywords(ctx context.Context, text string) ([]models.Keyword, error)
+	FindMatchingKeywords(ctx context.Context, text string) ([]models.SimpleKeyword, error)
 	
 	// Status operations
 	SetActive(ctx context.Context, id int, isActive bool) error

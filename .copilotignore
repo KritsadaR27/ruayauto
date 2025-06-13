@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+frontend-next/node_modules/
+
+# Build outputs
+frontend-next/.next/
+frontend-next/out/
+frontend-next/.swc/
+backend/bin/
+backend/server
+backend/migrate
+backend/tmp/
+
+# Documentation (reduce context)
+*.md
+!README.md
+!MVP_SPECIFICATION.md
+
+# Configuration
+docker-compose*.yml
+Dockerfile*
+*.sh
+*.sql
+
+# Tests
+*_test.go
+*.test.js
+test/
+tests/
+
+# Logs and databases
+*.log
+*.db
+*.sqlite*
+
+# Environment files
+.env*
+
+# Large generated files
+package-lock.json
+go.sum

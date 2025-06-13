@@ -5,46 +5,6 @@ import (
 	"time"
 )
 
-// Conversation represents a chat conversation with a user
-type Conversation struct {
-	ID              int        `json:"id" db:"id"`
-	FacebookUserID  string     `json:"facebook_user_id" db:"facebook_user_id"`
-	UserName        string     `json:"user_name" db:"user_name"`
-	Status          string     `json:"status" db:"status"` // active, paused, closed
-	LastMessageAt   *time.Time `json:"last_message_at" db:"last_message_at"`
-	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
-}
-
-// Message represents a single message in a conversation
-type Message struct {
-	ID                  int             `json:"id" db:"id"`
-	ConversationID      int             `json:"conversation_id" db:"conversation_id"`
-	FacebookMessageID   *string         `json:"facebook_message_id" db:"facebook_message_id"`
-	SenderType          string          `json:"sender_type" db:"sender_type"` // user, bot
-	MessageType         string          `json:"message_type" db:"message_type"` // text, image, quick_reply, template
-	MessageText         *string         `json:"message_text" db:"message_text"`
-	MessageData         json.RawMessage `json:"message_data" db:"message_data"` // Rich message data
-	MatchedKeyword      *string         `json:"matched_keyword" db:"matched_keyword"`
-	ResponseTemplate    *string         `json:"response_template" db:"response_template"`
-	ProcessingTimeMs    *int            `json:"processing_time_ms" db:"processing_time_ms"`
-	CreatedAt           time.Time       `json:"created_at" db:"created_at"`
-}
-
-// Keyword represents a keyword-response pair
-type Keyword struct {
-	ID              int             `json:"id" db:"id"`
-	Keyword         string          `json:"keyword" db:"keyword"`
-	ResponseType    string          `json:"response_type" db:"response_type"` // text, image, quick_reply, template
-	ResponseContent string          `json:"response_content" db:"response_content"`
-	ResponseData    json.RawMessage `json:"response_data" db:"response_data"`
-	Priority        int             `json:"priority" db:"priority"`
-	IsActive        bool            `json:"is_active" db:"is_active"`
-	MatchType       string          `json:"match_type" db:"match_type"` // exact, partial, regex
-	CreatedAt       time.Time       `json:"created_at" db:"created_at"`
-	UpdatedAt       time.Time       `json:"updated_at" db:"updated_at"`
-}
-
 // ResponseTemplate represents a reusable response template
 type ResponseTemplate struct {
 	ID           int             `json:"id" db:"id"`

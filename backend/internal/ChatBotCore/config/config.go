@@ -26,6 +26,8 @@ type Config struct {
 
 	// External Services
 	FacebookConnectURL string `mapstructure:"FACEBOOK_CONNECT_URL"`
+	FacebookPageToken  string `mapstructure:"FACEBOOK_PAGE_TOKEN"`
+	FacebookVerifyToken string `mapstructure:"FACEBOOK_VERIFY_TOKEN"`
 
 	// Features
 	EnableAnalytics bool `mapstructure:"ENABLE_ANALYTICS"`
@@ -148,4 +150,40 @@ func (c *Config) GetDatabaseURL() string {
 // GetFacebookConnectURL returns the Facebook Connect service URL
 func (c *Config) GetFacebookConnectURL() string {
 	return c.FacebookConnectURL
+}
+
+// GetFacebookPageToken returns the Facebook Page token
+func (c *Config) GetFacebookPageToken() string {
+	return c.FacebookPageToken
+}
+
+// GetFacebookVerifyToken returns the Facebook webhook verify token
+func (c *Config) GetFacebookVerifyToken() string {
+	return c.FacebookVerifyToken
+}
+
+// Validate validates the configuration
+func (c *Config) Validate() error {
+	if c.Port == "" {
+		return fmt.Errorf("PORT is required")
+	}
+	if c.DBHost == "" {
+		return fmt.Errorf("DB_HOST is required")
+	}
+	if c.DBPort == "" {
+		return fmt.Errorf("DB_PORT is required")
+	}
+	if c.DBUser == "" {
+		return fmt.Errorf("DB_USER is required")
+	}
+	if c.DBPassword == "" {
+		return fmt.Errorf("DB_PASSWORD is required")
+	}
+	if c.DBName == "" {
+		return fmt.Errorf("DB_NAME is required")
+	}
+	if c.FacebookConnectURL == "" {
+		return fmt.Errorf("FACEBOOK_CONNECT_URL is required")
+	}
+	return nil
 }

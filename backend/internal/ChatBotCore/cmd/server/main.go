@@ -1,96 +1,79 @@
 package main
 
 import (
-	"database/sql"
-	"log"
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"ruaymanagement/backend/internal/ChatBotCore/config"
-	"ruaymanagement/backend/internal/ChatBotCore/handlers"
-	"ruaymanagement/backend/internal/ChatBotCore/repository"
-	"ruaymanagement/backend/internal/ChatBotCore/services"
-
 	"github.com/gin-gonic/gin"
-	_ "github.com/lib/pq"
+	"ruaymanagement/libs/monitoring/logger"
 )
 
 func main() {
-	// Load configuration
-	cfg, err := config.Load()
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	// Initialize logger
+	logger.Init("info")
+	logger.Info("🚀 Starting ChatBotCore service...")
+
+	// Create Gin router
+	router := setupRouter()
+
+	// Configure server
+	srv := &http.Server{
+		Addr:    ":8090", // Changed port to avoid conflicts
+		Handler: router,
 	}
 
-	// Setup database connection
-	db, err := setupDatabase(cfg)
-	if err != nil {
-		log.Fatalf("Failed to setup database: %v", err)
-	}
-	defer db.Close()
+	// Start server in goroutine
+	go func() {
+		logger.Info("✅ ChatBotCore server running on http://localhost:8080")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("❌ Failed to start server:", err)
+		}
+	}()
 
-	// Initialize repositories
-	repos := initializeRepositories(db)
+	// Wait for interrupt signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Info("🛑 Shutting down server...")
 
-	// Initialize services
-	chatBotService := services.NewChatBotService(repos, cfg)
+	// Graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	// Setup Gin router
-	router := setupRouter(cfg, chatBotService, repos)
-
-	// Start server
-	log.Printf("🚀 ChatBotCore server starting on port %s", cfg.Port)
-	log.Printf("📊 Database connected successfully")
-
-	if err := router.Run(":" + cfg.Port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
-}
-
-// setupDatabase initializes database connection
-func setupDatabase(cfg *config.Config) (*sql.DB, error) {
-	db, err := sql.Open("postgres", cfg.GetDatabaseURL())
-	if err != nil {
-		return nil, err
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Error("❌ Server forced to shutdown:", err)
 	}
 
-	// Configure connection pool
-	db.SetMaxOpenConns(cfg.MaxConnections)
-	db.SetMaxIdleConns(cfg.MaxConnections / 2)
-
-	// Test connection
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	log.Printf("✅ Database connection established")
-	return db, nil
-}
-
-// initializeRepositories creates all repository instances
-func initializeRepositories(db *sql.DB) *repository.Repositories {
-	return &repository.Repositories{
-		Conversation:     repository.NewConversationRepository(db),
-		Message:          repository.NewMessageRepository(db),
-		Keyword:          repository.NewKeywordRepository(db),
-		ResponseTemplate: repository.NewResponseTemplateRepository(db),
-		Analytics:        repository.NewAnalyticsRepository(db),
-	}
+	logger.Info("✅ Server exited")
 }
 
 // setupRouter configures Gin router with all routes
-func setupRouter(cfg *config.Config, chatBotService *services.ChatBotService, repos *repository.Repositories) *gin.Engine {
-	// Set Gin mode
-	gin.SetMode(cfg.GinMode)
+func setupRouter() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
 
-	router := gin.Default()
-
-	// Middleware
+	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Use(corsMiddleware())
 
-	// Health check endpoint
+	// CORS middleware
+	router.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
+	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "healthy",
@@ -100,56 +83,131 @@ func setupRouter(cfg *config.Config, chatBotService *services.ChatBotService, re
 		})
 	})
 
-	// Initialize handlers
-	chatHandler := handlers.NewChatBotHandler(chatBotService)
-	keywordHandler := handlers.NewKeywordHandler(repos.Keyword)
-	messageHandler := handlers.NewMessageHandler(chatBotService) // New handler for external services
-
-	// API routes
+	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
-		// Health check
-		v1.GET("/health", chatHandler.HealthCheck)
+		// Keywords endpoints
+		v1.GET("/keywords", getKeywords)
+		v1.POST("/keywords", createKeyword)
+		v1.PUT("/keywords/:id", updateKeyword)
+		v1.DELETE("/keywords/:id", deleteKeyword)
 
-		// Message processing (for external services like FacebookConnect)
-		v1.POST("/messages/process", messageHandler.ProcessMessage)
-
-		// Conversations
-		conversations := v1.Group("/conversations")
-		{
-			conversations.GET("", chatHandler.GetConversations)
-			conversations.GET("/:id", chatHandler.GetConversation)
-			conversations.PUT("/:id/status", chatHandler.UpdateConversationStatus)
-		}
-
-		// Keywords management
-		keywords := v1.Group("/keywords")
-		{
-			keywords.POST("", keywordHandler.CreateKeyword)
-			keywords.GET("", keywordHandler.GetKeywords)
-			keywords.GET("/:id", keywordHandler.GetKeyword)
-			keywords.PUT("/:id", keywordHandler.UpdateKeyword)
-			keywords.DELETE("/:id", keywordHandler.DeleteKeyword)
-			keywords.PATCH("/:id/toggle", keywordHandler.ToggleKeywordStatus)
-		}
+		// Messages endpoints
+		v1.POST("/messages/process", processMessage)
 	}
 
 	return router
 }
 
-// corsMiddleware adds CORS headers
-func corsMiddleware() gin.HandlerFunc {
-	return gin.HandlerFunc(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Credentials", "true")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+// Mock handlers - replace with real business logic later
+func getKeywords(c *gin.Context) {
+	keywords := []map[string]interface{}{
+		{
+			"id":       1,
+			"keyword":  "สวัสดี",
+			"response": "สวัสดีครับ! มีอะไรให้ช่วยไหมครับ?",
+			"active":   true,
+		},
+		{
+			"id":       2,
+			"keyword":  "ขอบคุณ",
+			"response": "ยินดีครับ! มีอะไรให้ช่วยอีกไหมครับ?",
+			"active":   true,
+		},
+	}
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    keywords,
+	})
+}
 
-		c.Next()
+func createKeyword(c *gin.Context) {
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+		return
+	}
+
+	// Mock creation
+	req["id"] = 3
+	req["active"] = true
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"data":    req,
+	})
+}
+
+func updateKeyword(c *gin.Context) {
+	id := c.Param("id")
+
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+		return
+	}
+
+	// Mock update
+	req["id"] = id
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data":    req,
+	})
+}
+
+func deleteKeyword(c *gin.Context) {
+	id := c.Param("id")
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Keyword " + id + " deleted successfully",
+	})
+}
+
+func processMessage(c *gin.Context) {
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Invalid request body",
+		})
+		return
+	}
+
+	message, ok := req["message"].(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "Message is required",
+		})
+		return
+	}
+
+	// Simple keyword matching
+	var response string
+	switch message {
+	case "สวัสดี", "hello", "hi":
+		response = "สวัสดีครับ! มีอะไรให้ช่วยไหมครับ?"
+	case "ขอบคุณ", "thank you", "thanks":
+		response = "ยินดีครับ! มีอะไรให้ช่วยอีกไหมครับ?"
+	default:
+		response = "ขออภัยครับ ผมไม่เข้าใจคำถามของคุณ กรุณาลองถามใหม่ครับ"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"original_message": message,
+			"response":         response,
+			"matched":          response != "ขออภัยครับ ผมไม่เข้าใจคำถามของคุณ กรุณาลองถามใหม่ครับ",
+		},
 	})
 }

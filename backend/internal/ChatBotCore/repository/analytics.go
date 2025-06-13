@@ -2,23 +2,23 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
+	"ruaymanagement/backend/internal/ChatBotCore/database"
 	"ruaymanagement/backend/internal/ChatBotCore/models"
 )
 
 type analyticsRepository struct {
-	db *sql.DB
+	db *database.DB
 }
 
-func NewAnalyticsRepository(db *sql.DB) AnalyticsRepository {
+func NewAnalyticsRepository(db *database.DB) AnalyticsRepository {
 	return &analyticsRepository{db: db}
 }
 
 // GetConversationStats retrieves conversation statistics for a date range
 func (r *analyticsRepository) GetConversationStats(ctx context.Context, startDate, endDate string) ([]models.ConversationStats, error) {
-	rows, err := r.db.QueryContext(ctx, `
+	rows, err := r.db.Pool.Query(ctx, `
 		SELECT 
 			DATE(c.created_at) as date,
 			COUNT(DISTINCT c.id) as total_conversations,
@@ -59,7 +59,7 @@ func (r *analyticsRepository) GetConversationStats(ctx context.Context, startDat
 
 // CreateDailyStat creates a new daily statistic record
 func (r *analyticsRepository) CreateDailyStat(ctx context.Context, stat *models.ConversationStats) error {
-	_, err := r.db.ExecContext(ctx, `
+	_, err := r.db.Pool.Exec(ctx, `
 		INSERT INTO chatbot_mvp.conversation_stats (date, total_conversations, total_messages, bot_responses, avg_response_time_ms, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`, stat.Date, stat.TotalConversations, stat.TotalMessages, stat.BotResponses, stat.AvgResponseTimeMs, stat.CreatedAt)
@@ -69,7 +69,7 @@ func (r *analyticsRepository) CreateDailyStat(ctx context.Context, stat *models.
 
 // UpdateDailyStat updates an existing daily statistic record
 func (r *analyticsRepository) UpdateDailyStat(ctx context.Context, date string, stat *models.ConversationStats) error {
-	_, err := r.db.ExecContext(ctx, `
+	_, err := r.db.Pool.Exec(ctx, `
 		UPDATE chatbot_mvp.conversation_stats 
 		SET total_conversations = $2, total_messages = $3, bot_responses = $4, avg_response_time_ms = $5
 		WHERE date = $1
@@ -81,7 +81,7 @@ func (r *analyticsRepository) UpdateDailyStat(ctx context.Context, date string, 
 // GetTotalConversations returns the total number of conversations
 func (r *analyticsRepository) GetTotalConversations(ctx context.Context) (int, error) {
 	var count int
-	err := r.db.QueryRowContext(ctx, `
+	err := r.db.Pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM chatbot_mvp.conversations
 	`).Scan(&count)
 	
@@ -91,7 +91,7 @@ func (r *analyticsRepository) GetTotalConversations(ctx context.Context) (int, e
 // GetTotalMessages returns the total number of messages
 func (r *analyticsRepository) GetTotalMessages(ctx context.Context) (int, error) {
 	var count int
-	err := r.db.QueryRowContext(ctx, `
+	err := r.db.Pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM chatbot_mvp.messages
 	`).Scan(&count)
 	
@@ -101,7 +101,7 @@ func (r *analyticsRepository) GetTotalMessages(ctx context.Context) (int, error)
 // GetActiveConversations returns the number of active conversations
 func (r *analyticsRepository) GetActiveConversations(ctx context.Context) (int, error) {
 	var count int
-	err := r.db.QueryRowContext(ctx, `
+	err := r.db.Pool.QueryRow(ctx, `
 		SELECT COUNT(*) FROM chatbot_mvp.conversations WHERE status = 'active'
 	`).Scan(&count)
 	
@@ -111,7 +111,7 @@ func (r *analyticsRepository) GetActiveConversations(ctx context.Context) (int, 
 // GetAverageResponseTime calculates average response time for the last N days
 func (r *analyticsRepository) GetAverageResponseTime(ctx context.Context, days int) (float64, error) {
 	var avgTime float64
-	err := r.db.QueryRowContext(ctx, `
+	err := r.db.Pool.QueryRow(ctx, `
 		SELECT COALESCE(AVG(
 			EXTRACT(EPOCH FROM (bot_msg.created_at - user_msg.created_at))
 		), 0) as avg_response_time_seconds
@@ -134,7 +134,7 @@ func (r *analyticsRepository) GetAverageResponseTime(ctx context.Context, days i
 
 // GetTopKeywords returns the most frequently used keywords
 func (r *analyticsRepository) GetTopKeywords(ctx context.Context, limit int, days int) ([]map[string]interface{}, error) {
-	rows, err := r.db.QueryContext(ctx, `
+	rows, err := r.db.Pool.Query(ctx, `
 		SELECT 
 			k.keyword_text,
 			COUNT(m.id) as usage_count
@@ -173,7 +173,7 @@ func (r *analyticsRepository) GetTopKeywords(ctx context.Context, limit int, day
 
 // GetResponseTypeDistribution returns distribution of response types
 func (r *analyticsRepository) GetResponseTypeDistribution(ctx context.Context, days int) (map[string]int, error) {
-	rows, err := r.db.QueryContext(ctx, `
+	rows, err := r.db.Pool.Query(ctx, `
 		SELECT 
 			response_type,
 			COUNT(*) as count
@@ -206,7 +206,7 @@ func (r *analyticsRepository) GetResponseTypeDistribution(ctx context.Context, d
 
 // GetHourlyMessageDistribution returns hourly message distribution
 func (r *analyticsRepository) GetHourlyMessageDistribution(ctx context.Context, days int) ([]map[string]interface{}, error) {
-	rows, err := r.db.QueryContext(ctx, `
+	rows, err := r.db.Pool.Query(ctx, `
 		SELECT 
 			EXTRACT(HOUR FROM created_at) as hour,
 			COUNT(*) as message_count

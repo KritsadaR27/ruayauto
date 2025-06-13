@@ -1,192 +1,140 @@
-package services
+package service
 
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
-	"ruaymanagement/backend/internal/ChatBotCore/config"
 	"ruaymanagement/backend/internal/ChatBotCore/models"
 	"ruaymanagement/backend/internal/ChatBotCore/repository"
 )
 
-// ChatBotService handles core chatbot logic
+// ChatBotService provides the main business logic for the chatbot
 type ChatBotService struct {
-	repos  *repository.Repositories
-	config *config.Config
+	conversationService *ConversationService
+	messageService      *MessageService
+	keywordService      *KeywordService
 }
 
 // NewChatBotService creates a new chatbot service
-func NewChatBotService(repos *repository.Repositories, config *config.Config) *ChatBotService {
+func NewChatBotService(
+	conversationRepo repository.ConversationRepository,
+	messageRepo repository.MessageRepository,
+	keywordRepo repository.KeywordRepository,
+) *ChatBotService {
 	return &ChatBotService{
-		repos:  repos,
-		config: config,
+		conversationService: NewConversationService(conversationRepo),
+		messageService:      NewMessageService(messageRepo),
+		keywordService:      NewKeywordService(keywordRepo),
 	}
 }
 
+// ProcessMessageRequest represents a message processing request
+type ProcessMessageRequest struct {
+	PageID           string  `json:"page_id"`
+	FacebookUserID   string  `json:"facebook_user_id"`
+	FacebookUserName *string `json:"facebook_user_name,omitempty"`
+	MessageID        *string `json:"message_id,omitempty"`
+	MessageText      string  `json:"message_text"`
+	MessageType      string  `json:"message_type"`
+	SourceType       string  `json:"source_type"`
+	PostID           *string `json:"post_id,omitempty"`
+	Metadata         string  `json:"metadata,omitempty"`
+}
+
+// ProcessMessageResponse represents the response from message processing
+type ProcessMessageResponse struct {
+	ConversationID   int     `json:"conversation_id"`
+	UserMessageID    int     `json:"user_message_id"`
+	BotMessageID     *int    `json:"bot_message_id,omitempty"`
+	ResponseText     *string `json:"response_text,omitempty"`
+	MatchedKeyword   *string `json:"matched_keyword,omitempty"`
+	ProcessingTimeMs int     `json:"processing_time_ms"`
+}
+
 // ProcessMessage processes an incoming message and generates a response
-func (s *ChatBotService) ProcessMessage(ctx context.Context, req *models.ProcessMessageRequest) (*models.ProcessMessageResponse, error) {
+func (s *ChatBotService) ProcessMessage(ctx context.Context, req ProcessMessageRequest) (*ProcessMessageResponse, error) {
 	startTime := time.Now()
 
-	// 1. Find or create conversation
-	conversation, err := s.findOrCreateConversation(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find or create conversation: %w", err)
+	// Validate input
+	if req.FacebookUserID == "" {
+		return nil, fmt.Errorf("facebook_user_id is required")
+	}
+	if req.MessageText == "" {
+		return nil, fmt.Errorf("message_text is required")
 	}
 
-	// 2. Store incoming user message
-	userMessage, err := s.storeUserMessage(ctx, conversation.ID, req)
+	// Get or create conversation
+	conversation, err := s.conversationService.GetOrCreateConversation(
+		ctx, req.PageID, req.FacebookUserID, req.SourceType, req.PostID,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to store user message: %w", err)
+		return nil, fmt.Errorf("failed to get or create conversation: %w", err)
 	}
 
-	// 3. Process message and find response (placeholder - will implement keyword matching later)
-	response := s.processMessageLogic(ctx, req.MessageText)
-
-	// 4. Store bot response message (if we're replying)
-	if response.ShouldReply {
-		_, err = s.storeBotMessage(ctx, conversation.ID, response)
-		if err != nil {
-			return nil, fmt.Errorf("failed to store bot message: %w", err)
+	// Update conversation user name if provided
+	if req.FacebookUserName != nil && conversation.FacebookUserName != req.FacebookUserName {
+		conversation.FacebookUserName = req.FacebookUserName
+		if err := s.conversationService.UpdateConversation(ctx, conversation); err != nil {
+			// Log but don't fail
+			fmt.Printf("Warning: failed to update conversation user name: %v\n", err)
 		}
 	}
 
-	// 5. Update conversation last message time
-	if err := s.repos.Conversation.UpdateLastMessageTime(ctx, conversation.ID); err != nil {
-		// Log error but don't fail the request
-		fmt.Printf("Warning: failed to update last message time: %v\n", err)
+	// Create user message
+	userMessage, err := s.messageService.CreateUserMessage(
+		ctx, conversation.ID, req.MessageID, req.MessageType, &req.MessageText, req.Metadata,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user message: %w", err)
 	}
 
-	// Calculate processing time
-	processingTime := int(time.Since(startTime).Milliseconds())
+	// Find matching keyword
+	matchedKeyword, err := s.keywordService.FindMatchingKeyword(ctx, req.MessageText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find matching keyword: %w", err)
+	}
 
-	// Build response
-	response.ProcessingTimeMs = processingTime
-	response.ConversationID = conversation.ID
-	response.MessageID = userMessage.ID
+	response := &ProcessMessageResponse{
+		ConversationID:   conversation.ID,
+		UserMessageID:    userMessage.ID,
+		ProcessingTimeMs: int(time.Since(startTime).Milliseconds()),
+	}
+
+	// Generate response if keyword matched
+	if matchedKeyword != nil {
+		responseTimeMs := int(time.Since(startTime).Milliseconds())
+
+		// Create bot response message
+		botMessage, err := s.messageService.CreateBotMessage(
+			ctx, conversation.ID, models.MessageTypeText, &matchedKeyword.Response, "", &responseTimeMs,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create bot message: %w", err)
+		}
+
+		response.BotMessageID = &botMessage.ID
+		response.ResponseText = &matchedKeyword.Response
+		response.MatchedKeyword = &matchedKeyword.Keyword
+	}
+
+	// Update conversation last message time
+	if err := s.conversationService.UpdateLastMessageTime(ctx, conversation.ID); err != nil {
+		// Log but don't fail
+		fmt.Printf("Warning: failed to update last message time: %v\n", err)
+	}
 
 	return response, nil
 }
 
-// findOrCreateConversation finds existing conversation or creates a new one
-func (s *ChatBotService) findOrCreateConversation(ctx context.Context, req *models.ProcessMessageRequest) (*models.Conversation, error) {
-	// Try to find existing conversation
-	conv, err := s.repos.Conversation.GetByFacebookUserID(ctx, req.FacebookUserID)
-	if err == nil {
-		// Update user name if it changed
-		if conv.UserName != req.UserName {
-			conv.UserName = req.UserName
-			if updateErr := s.repos.Conversation.Update(ctx, conv); updateErr != nil {
-				fmt.Printf("Warning: failed to update user name: %v\n", updateErr)
-			}
-		}
-		return conv, nil
-	}
-
-	// Create new conversation
-	newConv := &models.Conversation{
-		FacebookUserID: req.FacebookUserID,
-		UserName:       req.UserName,
-		Status:         "active",
-	}
-
-	if err := s.repos.Conversation.Create(ctx, newConv); err != nil {
-		return nil, err
-	}
-
-	return newConv, nil
-}
-
-// storeUserMessage stores the incoming user message
-func (s *ChatBotService) storeUserMessage(ctx context.Context, conversationID int, req *models.ProcessMessageRequest) (*models.Message, error) {
-	message := &models.Message{
-		ConversationID:    conversationID,
-		FacebookMessageID: req.FacebookMessageID,
-		SenderType:        "user",
-		MessageType:       req.MessageType,
-		MessageText:       &req.MessageText,
-	}
-
-	if err := s.repos.Message.Create(ctx, message); err != nil {
-		return nil, err
-	}
-
-	return message, nil
-}
-
-// storeBotMessage stores the bot's response message
-func (s *ChatBotService) storeBotMessage(ctx context.Context, conversationID int, response *models.ProcessMessageResponse) (*models.Message, error) {
-	message := &models.Message{
-		ConversationID: conversationID,
-		SenderType:     "bot",
-		MessageType:    response.ResponseType,
-		MessageText:    &response.ResponseContent,
-		MatchedKeyword: response.MatchedKeyword,
-	}
-
-	if err := s.repos.Message.Create(ctx, message); err != nil {
-		return nil, err
-	}
-
-	return message, nil
-}
-
-// processMessageLogic handles the core message processing logic
-func (s *ChatBotService) processMessageLogic(ctx context.Context, messageText string) *models.ProcessMessageResponse {
-	response := &models.ProcessMessageResponse{
-		ShouldReply:     false,
-		ResponseType:    "text",
-		ResponseContent: s.getDefaultResponse(messageText),
-	}
-
-	// Find matching keywords
-	matchedKeywords, err := s.repos.Keyword.FindMatchingKeywords(ctx, messageText)
-	if err != nil {
-		fmt.Printf("Warning: failed to find matching keywords: %v\n", err)
-		return response
-	}
-
-	// If we have matched keywords, use the highest priority one
-	if len(matchedKeywords) > 0 {
-		bestMatch := matchedKeywords[0] // Already sorted by priority in repository
-		response.ShouldReply = true
-		response.MatchedKeyword = &bestMatch.Keyword
-		response.ResponseContent = bestMatch.ResponseContent
-		response.ResponseType = bestMatch.ResponseType
-	} else {
-		// Fallback to simple keyword matching for common cases
-		if contains(messageText, []string{"สวัสดี", "หวัดดี", "hello", "hi"}) {
-			response.ShouldReply = true
-			response.ResponseContent = "สวัสดีค่ะ! ยินดีต้อนรับครับ 😊"
-			response.MatchedKeyword = stringPtr("สวัสดี")
-		} else if contains(messageText, []string{"ขอบคุณ", "thank you", "thanks"}) {
-			response.ShouldReply = true
-			response.ResponseContent = "ยินดีค่ะ! มีอะไรให้ช่วยอีกไหมคะ"
-			response.MatchedKeyword = stringPtr("ขอบคุณ")
-		} else if contains(messageText, []string{"ราคา", "เท่าไหร่", "price"}) {
-			response.ShouldReply = true
-			response.ResponseContent = "สำหรับข้อมูลราคา กรุณาแจ้งสินค้าที่สนใจค่ะ"
-			response.MatchedKeyword = stringPtr("ราคา")
-		}
-	}
-
-	return response
-}
-
-// getDefaultResponse returns a default response
-func (s *ChatBotService) getDefaultResponse(messageText string) string {
-	return "ขอบคุณที่ติดต่อมาค่ะ! เรากำลังดำเนินการตอบกลับ"
-}
-
 // GetConversations retrieves conversations with pagination
 func (s *ChatBotService) GetConversations(ctx context.Context, offset, limit int) ([]models.Conversation, int, error) {
-	conversations, err := s.repos.Conversation.List(ctx, offset, limit)
+	conversations, err := s.conversationService.ListConversations(ctx, offset, limit)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	total, err := s.repos.Conversation.Count(ctx)
+	total, err := s.conversationService.CountConversations(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -196,25 +144,92 @@ func (s *ChatBotService) GetConversations(ctx context.Context, offset, limit int
 
 // GetConversation retrieves a specific conversation
 func (s *ChatBotService) GetConversation(ctx context.Context, id int) (*models.Conversation, error) {
-	return s.repos.Conversation.GetByID(ctx, id)
+	return s.conversationService.GetConversation(ctx, id)
 }
 
-// UpdateConversationStatus updates conversation status
-func (s *ChatBotService) UpdateConversationStatus(ctx context.Context, id int, status string) error {
-	return s.repos.Conversation.SetStatus(ctx, id, status)
+// SetConversationStatus updates a conversation status
+func (s *ChatBotService) SetConversationStatus(ctx context.Context, id int, status string) error {
+	return s.conversationService.SetConversationStatus(ctx, id, status)
 }
 
-// Helper functions
-func contains(text string, keywords []string) bool {
-	textLower := strings.ToLower(text)
-	for _, keyword := range keywords {
-		if strings.Contains(textLower, strings.ToLower(keyword)) {
-			return true
-		}
+// GetMessages retrieves messages for a conversation
+func (s *ChatBotService) GetMessages(ctx context.Context, conversationID int, offset, limit int) ([]models.Message, int, error) {
+	messages, err := s.messageService.GetMessagesByConversation(ctx, conversationID, offset, limit)
+	if err != nil {
+		return nil, 0, err
 	}
-	return false
+
+	total, err := s.messageService.CountMessagesByConversation(ctx, conversationID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return messages, total, nil
 }
 
-func stringPtr(s string) *string {
-	return &s
+// GetKeywords retrieves all keywords
+func (s *ChatBotService) GetKeywords(ctx context.Context) ([]models.SimpleKeyword, error) {
+	return s.keywordService.GetAllKeywords(ctx)
+}
+
+// CreateKeyword creates a new keyword
+func (s *ChatBotService) CreateKeyword(ctx context.Context, keyword, response string) error {
+	return s.keywordService.CreateKeyword(ctx, keyword, response)
+}
+
+// UpdateKeyword updates a keyword
+func (s *ChatBotService) UpdateKeyword(ctx context.Context, id int, keyword, response string) error {
+	return s.keywordService.UpdateKeyword(ctx, id, keyword, response)
+}
+
+// DeleteKeyword deletes a keyword
+func (s *ChatBotService) DeleteKeyword(ctx context.Context, id int) error {
+	return s.keywordService.DeleteKeyword(ctx, id)
+}
+
+// ProcessMessagePublic processes a message request from external API (models package)
+func (s *ChatBotService) ProcessMessagePublic(ctx context.Context, req *models.ProcessMessageRequest) (*models.ProcessMessageResponse, error) {
+	// Convert models.ProcessMessageRequest to service.ProcessMessageRequest
+	serviceReq := ProcessMessageRequest{
+		PageID:           "default", // Default page ID
+		FacebookUserID:   req.FacebookUserID,
+		FacebookUserName: &req.UserName,
+		MessageID:        req.FacebookMessageID,
+		MessageText:      req.MessageText,
+		MessageType:      req.MessageType,
+		SourceType:       "api", // Default source type
+		PostID:           nil,   // No post ID from API request
+		Metadata:         "",    // Convert map to string if needed
+	}
+
+	// Convert MessageData to metadata string if present
+	if req.MessageData != nil && len(req.MessageData) > 0 {
+		// For now, just use empty string - could serialize to JSON if needed
+		serviceReq.Metadata = ""
+	}
+
+	// Call internal ProcessMessage
+	serviceResp, err := s.ProcessMessage(ctx, serviceReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert service.ProcessMessageResponse to models.ProcessMessageResponse
+	modelsResp := &models.ProcessMessageResponse{
+		ShouldReply:      serviceResp.ResponseText != nil,
+		ResponseType:     "text", // Default to text
+		ResponseContent:  "",
+		ResponseData:     make(map[string]interface{}),
+		MatchedKeyword:   serviceResp.MatchedKeyword,
+		ProcessingTimeMs: serviceResp.ProcessingTimeMs,
+		ConversationID:   serviceResp.ConversationID,
+		MessageID:        serviceResp.UserMessageID,
+	}
+
+	// Set response content if we have a response
+	if serviceResp.ResponseText != nil {
+		modelsResp.ResponseContent = *serviceResp.ResponseText
+	}
+
+	return modelsResp, nil
 }
