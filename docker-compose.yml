@@ -1,18 +1,44 @@
-version: '3.8'
-
 services:
-  # ChatBotCore Service
-  chatbot-core:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5532:5432"
+    environment:
+      - POSTGRES_DB=ruay_chatbot
+      - POSTGRES_USER=ruay_user
+      - POSTGRES_PASSWORD=ruay_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ruay_user -d ruay_chatbot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - ruay-network
+
+  # Chatbot Service (Port 8090)
+  chatbot:
     build:
       context: .
-      dockerfile: backend/internal/ChatBotCore/Dockerfile
+      dockerfile: deployments/docker/chatbot.Dockerfile
     ports:
       - "8090:8090"
     environment:
       - GIN_MODE=release
       - LOG_LEVEL=info
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=ruay_user
+      - DB_PASSWORD=ruay_password
+      - DB_NAME=ruay_chatbot
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/health"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,20 +46,25 @@ services:
     networks:
       - ruay-network
 
-  # FacebookConnect Service  
-  facebook-connect:
+  # Webhook Service (Port 8091)  
+  webhook:
     build:
       context: .
-      dockerfile: backend/external/FacebookConnect/Dockerfile
+      dockerfile: deployments/docker/webhook.Dockerfile
     ports:
       - "8091:8091"
     environment:
       - GIN_MODE=release
       - LOG_LEVEL=info
+      - WEBHOOK_PORT=8091
+      - WEBHOOK_HOST=0.0.0.0
+      - CHATBOT_URL=http://chatbot:8090
+      - FACEBOOK_ENABLED=true
+      - LINE_ENABLED=true
     depends_on:
-      - chatbot-core
+      - chatbot
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8091/health"]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8091/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -41,23 +72,27 @@ services:
     networks:
       - ruay-network
 
-  # Frontend Service
-  frontend:
+  # Web Service (Port 3008)
+  web:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: deployments/docker/web.Dockerfile
     ports:
       - "3008:3008"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://chatbot-core:8090
-      - NEXT_PUBLIC_FACEBOOK_API_URL=http://facebook-connect:8091
+      - NEXT_PUBLIC_API_URL=http://chatbot:8090
+      - NEXT_PUBLIC_WEBHOOK_URL=http://webhook:8091
     depends_on:
-      - chatbot-core
-      - facebook-connect
+      - chatbot
+      - webhook
     restart: unless-stopped
     networks:
       - ruay-network
+
+volumes:
+  postgres_data:
+
 
 networks:
   ruay-network:

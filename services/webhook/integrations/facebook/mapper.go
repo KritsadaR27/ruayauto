@@ -1,7 +1,6 @@
 package facebook
 
 import (
-	"strconv"
 	"time"
 
 	"webhook/internal/model"

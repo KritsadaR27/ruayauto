@@ -2,7 +2,6 @@ package handler
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 
 	"webhook/integrations/facebook"
 	"webhook/integrations/line"
-	"webhook/internal/model"
 	"webhook/internal/service"
 )
 

@@ -1,7 +1,5 @@
 package line
 
-import "time"
-
 // LineWebhookPayload represents LINE webhook payload
 type LineWebhookPayload struct {
 	Destination string      `json:"destination"`
