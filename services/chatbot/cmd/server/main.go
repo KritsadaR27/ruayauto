@@ -26,11 +26,11 @@ func main() {
 	defer db.Close()
 
 	// Initialize layers
-	keywordRepo := repository.NewKeywordRepository(db)
+	ruleRepo := repository.NewRuleRepository(db)
 	messageRepo := repository.NewMessageRepository(db)
-	chatbotService := services.NewChatbotService(keywordRepo, messageRepo)
+	chatbotService := services.NewChatbotService(ruleRepo, messageRepo)
 	chatbotHandler := handlers.NewChatbotHandler(chatbotService)
-	keywordHandler := handlers.NewKeywordHandler(keywordRepo)
+	ruleHandler := handlers.NewRuleHandler(ruleRepo)
 	messageHandler := handlers.NewMessageHandler(messageRepo)
 
 	// Setup routes
@@ -46,11 +46,11 @@ func main() {
 	// API routes for web interface
 	api := r.Group("/api")
 	{
-		// Keywords management
-		api.GET("/keywords", keywordHandler.GetKeywords)
-		api.POST("/keywords", keywordHandler.BulkCreateKeywords)
-		api.PUT("/keywords/:id", keywordHandler.UpdateKeyword)
-		api.DELETE("/keywords/:id", keywordHandler.DeleteKeyword)
+		// Rules management
+		api.GET("/rules", ruleHandler.GetRules)
+		api.POST("/rules", ruleHandler.CreateRule)
+		api.PUT("/rules/:id", ruleHandler.UpdateRule)
+		api.DELETE("/rules/:id", ruleHandler.DeleteRule)
 		
 		// Messages for AI analysis
 		api.GET("/messages", messageHandler.GetMessages)
