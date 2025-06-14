@@ -9,10 +9,7 @@ export async function GET(request: NextRequest) {
     
     // Enhanced caching with 'use cache' directive (Next.js 15 feature)
     const response = await fetch('http://chatbot:8090/api/keywords', {
-      next: { 
-        revalidate: 30,
-        tags: ['keywords']
-      }
+      cache: 'no-store'  // ปิด cache ชั่วคราว
     })
     
     if (!response.ok) {

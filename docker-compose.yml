@@ -81,13 +81,20 @@ services:
   web:
     build:
       context: .
-      dockerfile: deployments/docker/web.Dockerfile
+      dockerfile: deployments/docker/web.dev.Dockerfile
     ports:
       - "3008:3008"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development  # เปลี่ยนเป็น development สำหรับ hot reload
       - NEXT_PUBLIC_API_URL=http://chatbot:8090
-      - NEXT_PUBLIC_WEBHOOK_URL=http://webhook:8091
+      - NEXT_PUBLIC_WEBPACK_URL=http://webhook:8091
+    volumes:
+      # Mount source code สำหรับ development
+      - ./web:/app
+      # Mount node_modules เป็น named volume เพื่อประสิทธิภาพ
+      - web_node_modules:/app/node_modules
+      # Mount Next.js cache
+      - web_next_cache:/app/.next
     depends_on:
       - chatbot
       - webhook
@@ -97,6 +104,8 @@ services:
 
 volumes:
   postgres_data:
+  web_node_modules:
+  web_next_cache:
 
 
 networks:

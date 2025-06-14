@@ -103,6 +103,7 @@ interface RuleCardProps {
     onTogglePageSelection: (ruleId: number, pageId: string) => void
     onImageUpload: (ruleId: number, responseIdx: number, event: React.ChangeEvent<HTMLInputElement>) => void
     onInboxImageUpload: (ruleId: number, event: React.ChangeEvent<HTMLInputElement>) => void
+    onSaveRule: (id: number) => void
 }
 
 const RuleCard: React.FC<RuleCardProps> = ({
@@ -117,7 +118,8 @@ const RuleCard: React.FC<RuleCardProps> = ({
     onAddResponse,
     onTogglePageSelection,
     onImageUpload,
-    onInboxImageUpload
+    onInboxImageUpload,
+    onSaveRule
 }) => {
     // Auto-Title feature states
     const [isEditingTitle, setIsEditingTitle] = useState(false)
@@ -135,13 +137,19 @@ const RuleCard: React.FC<RuleCardProps> = ({
 
         if (firstKeyword && !rule.hasManuallyEditedTitle && !isEditingTitle) {
             const newTitle = `${firstKeyword} (รายการที่ ${index + 1})`
-            setLocalTitle(newTitle)
-            onUpdateRule(rule.id, 'name', newTitle)
+            if (localTitle !== newTitle) {
+                setLocalTitle(newTitle)
+                // Temporarily disabled to prevent infinite loop
+                // onUpdateRule(rule.id, 'name', newTitle)
+            }
         } else if (!firstKeyword && !rule.hasManuallyEditedTitle && !isEditingTitle) {
-            setLocalTitle(defaultTitle)
-            onUpdateRule(rule.id, 'name', defaultTitle)
+            if (localTitle !== defaultTitle) {
+                setLocalTitle(defaultTitle)
+                // Temporarily disabled to prevent infinite loop
+                // onUpdateRule(rule.id, 'name', defaultTitle)
+            }
         }
-    }, [rule.keywords, index, rule.hasManuallyEditedTitle, isEditingTitle, rule.id, onUpdateRule])
+    }, [rule.keywords, index, rule.hasManuallyEditedTitle, isEditingTitle, rule.id, localTitle])
 
     // Auto-focus when editing title
     useEffect(() => {
@@ -260,11 +268,19 @@ const RuleCard: React.FC<RuleCardProps> = ({
 
                     {/* Stats */}
                     <span className="text-sm text-gray-500">
-                        {rule.keywords.length} คีย์เวิร์ด • {rule.responses.length} คำตอบ • {rule.selectedPages.length} เพจ
+                        {rule.keywords.length} คีย์เวิร์ด 55• {rule.responses.length} คำตอบ • {rule.selectedPages.length} เพจ
                     </span>
                 </div>
 
                 <div className="flex items-center space-x-2">
+                    <button
+                        onClick={() => onSaveRule(rule.id)}
+                        className="px-3 py-1 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+                        title="บันทึกการเปลี่ยนแปลง"
+                    >
+                        บันทึก
+                    </button>
+                    
                     <button
                         onClick={() => onToggleExpand(rule.id)}
                         className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
@@ -356,7 +372,6 @@ const RuleCard: React.FC<RuleCardProps> = ({
                         </div>
                         <input
                             type="text"
-                            placeholder="พิมพ์คีย์เวิร์ดแล้วกด Enter (เช่น xyzbqwerty, testprice123, abcdeftest)"
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             onKeyDown={(e) => {
                                 if ((e.key === 'Enter' || e.key === 'Tab' || e.key === ',') && e.currentTarget.value.trim()) {
@@ -505,7 +520,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
                                 <div className="text-sm font-medium text-blue-800 mb-2">
                                     📩 ข้อความที่จะส่งใน Inbox (ไม่ใส่ = ใช้ข้อความจากคำตอบ)
                                 </div>
-                                
+
                                 <textarea
                                     value={rule.inboxMessage || ''}
                                     onChange={(e) => onUpdateRule(rule.id, 'inboxMessage', e.target.value)}
@@ -513,7 +528,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
                                     rows={2}
                                     placeholder="ข้อความที่จะส่งใน Inbox (ไม่ใส่ = ใช้ข้อความจากคำตอบ)"
                                 />
-                                
+
                                 {/* Inbox Image Upload */}
                                 <div className="flex items-center space-x-2">
                                     <input

@@ -155,44 +155,21 @@ const FacebookCommentMultiPage = () => {
         console.log('📦 API Response:', result)
         if (result.success && result.data?.data?.pairs) {
           console.log('✅ Found pairs data:', result.data.data.pairs)
-          
-          // Group keywords by response to create rules with multiple keywords
-          const responseGroups = new Map<string, any[]>()
-          
-          result.data.data.pairs.forEach((item: any) => {
-            const key = item.response
-            if (!responseGroups.has(key)) {
-              responseGroups.set(key, [])
-            }
-            responseGroups.get(key)!.push(item)
-          })
-          
-          // Transform grouped data to frontend format
-          const transformedRules: Rule[] = Array.from(responseGroups.entries()).map(([responseKey, items], index) => {
-            // Split comma-separated responses into separate Response objects
-            const responsesArray = responseKey.split(', ').map((responseText: string) => ({
-              text: responseText.trim()
-            }))
-            
-            // Collect all keywords for this response group
-            const keywords = items.map(item => item.keyword)
-            const firstItem = items[0]
-            
-            return {
-              id: firstItem.id,
-              name: keywords.length > 1 ? `${keywords[0]} และอีก ${keywords.length - 1} คำ` : keywords[0],
-              keywords: keywords, // Multiple keywords
-              responses: responsesArray, // Multiple responses from comma-separated string
-              enabled: firstItem.is_active,
-              expanded: false,
-              selectedPages: ['fb1', 'fb2'], // Default pages
-              hideAfterReply: false,
-              sendToInbox: false,
-              inboxMessage: '',
-              inboxImage: undefined,
-              hasManuallyEditedTitle: false
-            }
-          })
+          // Transform database format to frontend format
+          const transformedRules: Rule[] = result.data.data.pairs.map((item: any, index: number) => ({
+            id: item.id,
+            name: item.keyword, // Use keyword as name for now
+            keywords: [item.keyword], // Single keyword for now
+            responses: [{ text: item.response }], // Single response for now
+            enabled: item.is_active,
+            expanded: false,
+            selectedPages: ['fb1', 'fb2'], // Default pages
+            hideAfterReply: false,
+            sendToInbox: false,
+            inboxMessage: '',
+            inboxImage: undefined,
+            hasManuallyEditedTitle: false
+          }))
           console.log('🔄 Transformed rules:', transformedRules)
           setRules(transformedRules)
         } else {
@@ -273,63 +250,40 @@ const FacebookCommentMultiPage = () => {
       const isNewRule = rule.id > 1000000000000 // Timestamp-based IDs are much larger
 
       if (isNewRule) {
-        // For new rules, create multiple records for each keyword-response combination
-        const keywords = rule.keywords.filter(k => k.trim() !== '')
-        const responses = rule.responses.filter(r => r.text.trim() !== '')
-        
-        if (keywords.length === 0) {
-          keywords.push(rule.name) // Use rule name as fallback
-        }
-        if (responses.length === 0) {
-          responses.push({ text: 'ขอบคุณสำหรับข้อความครับ' }) // Default response
-        }
-
-        // Create a record for each keyword (all keywords will have all responses available)
-        for (const keyword of keywords) {
-          // For each keyword, we'll save with the first response (random selection happens in chatbot logic)
-          const response = await fetch('/api/keywords', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pairs: [{
-                keyword: keyword,
-                response: responses.map(r => r.text).join(', '), // Join multiple responses with comma separator
-              }]
-            })
+        // For new rules, use POST to create
+        const response = await fetch('/api/keywords', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pairs: [{
+              keyword: rule.keywords[0] || rule.name, // Use first keyword or name
+              response: rule.responses[0]?.text || '', // Use first response
+            }]
           })
+        })
 
-          if (!response.ok) {
-            throw new Error(`Failed to save keyword "${keyword}" to database`)
-          }
+        if (!response.ok) {
+          throw new Error('Failed to save new rule to database')
+        }
 
-          const result = await response.json()
-          if (!result.success) {
-            throw new Error(result.error || `Failed to save keyword "${keyword}"`)
-          }
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save new rule')
         }
       } else {
-        // For existing rules, update with multiple keywords and responses
-        const keywords = rule.keywords.filter(k => k.trim() !== '')
-        const responses = rule.responses.filter(r => r.text.trim() !== '')
-        
-        if (keywords.length === 0 || responses.length === 0) {
-          console.warn('Skipping update: rule has no valid keywords or responses')
-          return
-        }
-
-        // Update the existing record with first keyword and combined responses
+        // For existing rules, use PUT to update
         const response = await fetch(`/api/keywords/${rule.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            keyword: keywords[0], // First keyword
-            response: responses.map(r => r.text).join(', '), // Join multiple responses with comma
+            keyword: rule.keywords[0] || rule.name, // Use first keyword or name
+            response: rule.responses[0]?.text || '', // Use first response
             is_active: rule.enabled,
-            priority: 1
+            priority: 1 // Default priority
           })
         })
 
@@ -340,26 +294,6 @@ const FacebookCommentMultiPage = () => {
         const result = await response.json()
         if (!result.success) {
           throw new Error(result.error || 'Failed to update rule')
-        }
-
-        // Create additional records for remaining keywords (if any)
-        for (let i = 1; i < keywords.length; i++) {
-          const additionalResponse = await fetch('/api/keywords', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pairs: [{
-                keyword: keywords[i],
-                response: responses.map(r => r.text).join(', '), // ใช้ comma separator เหมือนกับ keyword แรก
-              }]
-            })
-          })
-
-          if (!additionalResponse.ok) {
-            console.warn(`Failed to create additional keyword "${keywords[i]}"`)
-          }
         }
       }
     } catch (error) {
@@ -405,25 +339,6 @@ const FacebookCommentMultiPage = () => {
         }
       }
     }, 200) // เพิ่ม delay เป็น 200ms
-  }
-
-  // Manual save function for individual rules
-  const saveRule = async (id: number) => {
-    const rule = rules.find(r => r.id === id)
-    if (!rule) return
-
-    try {
-      console.log('💾 Manually saving rule:', id)
-      await saveRuleToDatabase(rule)
-      console.log('✅ Rule saved successfully')
-      
-      // Optional: Show success feedback
-      // You could add a toast notification here
-    } catch (error) {
-      console.error('❌ Failed to save rule:', error)
-      // Optional: Show error feedback
-      // You could add error toast notification here
-    }
   }
 
   const updateRule = async (id: number, field: keyof Rule, value: any) => {
@@ -1088,7 +1003,6 @@ const FacebookCommentMultiPage = () => {
                 onTogglePageSelection={togglePageSelection}
                 onImageUpload={handleImageUpload}
                 onInboxImageUpload={handleInboxImageUpload}
-                onSaveRule={saveRule}
               />
             ))
           )}

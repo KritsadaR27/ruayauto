@@ -36,8 +36,9 @@ func main() {
 	// Setup routes
 	r := gin.Default()
 	
-	// Health check
+	// Health check - support both GET and HEAD methods
 	r.GET("/health", chatbotHandler.Health)
+	r.HEAD("/health", chatbotHandler.Health)
 	
 	// Core chatbot functionality
 	r.POST("/process", chatbotHandler.ProcessMessage)

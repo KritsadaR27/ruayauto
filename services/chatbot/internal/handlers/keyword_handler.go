@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -82,9 +83,12 @@ func (h *KeywordHandler) UpdateKeyword(c *gin.Context) {
 	}
 	
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("❌ Update keyword bind error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	
+	log.Printf("📝 Updating keyword %d with data: %+v", id, req)
 	
 	keyword := &models.Keyword{
 		ID:       id,
@@ -98,6 +102,7 @@ func (h *KeywordHandler) UpdateKeyword(c *gin.Context) {
 	}
 	
 	if err := h.repo.Update(c.Request.Context(), keyword); err != nil {
+		log.Printf("❌ Update keyword DB error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
