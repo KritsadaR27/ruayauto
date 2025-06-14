@@ -5,11 +5,11 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://chatbot-core:8090/api/:path*',
+        destination: 'http://chatbot:8090/api/:path*',
       },
       {
         source: '/webhook/:path*',
-        destination: 'http://facebook-connect:8091/webhook/:path*',
+        destination: 'http://webhook:8091/webhook/:path*',
       },
     ];
   },

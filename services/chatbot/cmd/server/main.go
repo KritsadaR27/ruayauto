@@ -27,13 +27,33 @@ func main() {
 
 	// Initialize layers
 	keywordRepo := repository.NewKeywordRepository(db)
-	chatbotService := services.NewChatbotService(keywordRepo)
+	messageRepo := repository.NewMessageRepository(db)
+	chatbotService := services.NewChatbotService(keywordRepo, messageRepo)
 	chatbotHandler := handlers.NewChatbotHandler(chatbotService)
+	keywordHandler := handlers.NewKeywordHandler(keywordRepo)
+	messageHandler := handlers.NewMessageHandler(messageRepo)
 
 	// Setup routes
 	r := gin.Default()
+	
+	// Health check
 	r.GET("/health", chatbotHandler.Health)
+	
+	// Core chatbot functionality
 	r.POST("/process", chatbotHandler.ProcessMessage)
+	
+	// API routes for web interface
+	api := r.Group("/api")
+	{
+		// Keywords management
+		api.GET("/keywords", keywordHandler.GetKeywords)
+		api.POST("/keywords", keywordHandler.BulkCreateKeywords)
+		api.PUT("/keywords/:id", keywordHandler.UpdateKeyword)
+		api.DELETE("/keywords/:id", keywordHandler.DeleteKeyword)
+		
+		// Messages for AI analysis
+		api.GET("/messages", messageHandler.GetMessages)
+	}
 
 	log.Printf("🎯 Server starting on %s", cfg.GetAddr())
 	if err := r.Run(cfg.GetAddr()); err != nil {

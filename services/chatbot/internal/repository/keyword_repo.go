@@ -83,3 +83,69 @@ func (r *KeywordRepository) FindMatching(ctx context.Context, content string) ([
 	}
 	return matching, nil
 }
+
+func (r *KeywordRepository) Create(ctx context.Context, keyword *models.Keyword) error {
+	query := `
+		INSERT INTO keywords (keyword, response, is_active, priority, match_type, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+		RETURNING id, created_at, updated_at
+	`
+	
+	err := r.db.QueryRowContext(
+		ctx, query,
+		keyword.Keyword, keyword.Response, keyword.IsActive, 
+		keyword.Priority, keyword.MatchType,
+	).Scan(&keyword.ID, &keyword.CreatedAt, &keyword.UpdatedAt)
+	
+	return err
+}
+
+func (r *KeywordRepository) Update(ctx context.Context, keyword *models.Keyword) error {
+	query := `
+		UPDATE keywords 
+		SET keyword = $2, response = $3, is_active = $4, priority = $5, match_type = $6, updated_at = NOW()
+		WHERE id = $1
+		RETURNING updated_at
+	`
+	
+	err := r.db.QueryRowContext(
+		ctx, query,
+		keyword.ID, keyword.Keyword, keyword.Response, 
+		keyword.IsActive, keyword.Priority, keyword.MatchType,
+	).Scan(&keyword.UpdatedAt)
+	
+	return err
+}
+
+func (r *KeywordRepository) Delete(ctx context.Context, id int) error {
+	query := `DELETE FROM keywords WHERE id = $1`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
+}
+
+func (r *KeywordRepository) DeleteAll(ctx context.Context) error {
+	query := `DELETE FROM keywords`
+	_, err := r.db.ExecContext(ctx, query)
+	return err
+}
+
+func (r *KeywordRepository) GetByID(ctx context.Context, id int) (*models.Keyword, error) {
+	query := `
+		SELECT id, keyword, response, is_active, priority, match_type, created_at, updated_at
+		FROM keywords 
+		WHERE id = $1
+	`
+	
+	keyword := &models.Keyword{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&keyword.ID, &keyword.Keyword, &keyword.Response,
+		&keyword.IsActive, &keyword.Priority, &keyword.MatchType,
+		&keyword.CreatedAt, &keyword.UpdatedAt,
+	)
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	return keyword, nil
+}

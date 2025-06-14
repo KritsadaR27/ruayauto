@@ -13,7 +13,7 @@ export async function saveKeywordData(data: KeywordData): Promise<ApiResponse> {
       }))
     }
 
-    const response = await fetch('http://localhost:3006/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/keywords', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export async function saveKeywordData(data: KeywordData): Promise<ApiResponse> {
 // Server action สำหรับ load keyword data
 export async function loadKeywordData(): Promise<ApiResponse<KeywordData>> {
   try {
-    const response = await fetch('http://localhost:3006/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/keywords', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ export async function loadKeywordData(): Promise<ApiResponse<KeywordData>> {
         keywords: item.keyword ? item.keyword.split(',').filter(Boolean) : [],
         responses: item.response ? item.response.split('|').filter(Boolean) : []
       })) || [],
-      defaultResponses: ['ขอบคุณสำหรับข้อความครับ', 'ได้รับข้อความแล้วครับ'],
+      defaultResponses: ['ขอบคุณสำหรับข้อความทดสอบครับ', 'ได้รับข้อความทดสอบแล้วครับ'],
       enableDefault: true,
       noTag: false,
       noSticker: false,
@@ -97,7 +97,7 @@ export async function loadKeywordData(): Promise<ApiResponse<KeywordData>> {
 // Server action สำหรับ health check
 export async function checkSystemHealth(): Promise<ApiResponse> {
   try {
-    const response = await fetch('http://localhost:3006/health', {
+    const response = await fetch('http://chatbot:8090/health', {
       method: 'GET',
       // Next.js 15 caching
       next: { revalidate: 10, tags: ['health'] }

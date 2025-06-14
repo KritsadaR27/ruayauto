@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit') || '10'
     
     // Enhanced caching with 'use cache' directive (Next.js 15 feature)
-    const response = await fetch('http://localhost:3006/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/keywords', {
       next: { 
         revalidate: 30,
         tags: ['keywords']
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Forward to backend API
-    const response = await fetch('http://localhost:3006/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/keywords', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

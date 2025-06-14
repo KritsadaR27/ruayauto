@@ -12,6 +12,12 @@
 
 ### SERVICES:
 - Web: http://localhost:3008 (container: web)
-- Chatbot Service: http://localhost:8090 (container: chatbot-service)
-- Webhook Service: http://localhost:8091 (container: webhook-service)
-- Database: localhost:5532 (container: postgres)  
+- Chatbot Service: http://localhost:8090 (container: chatbot)
+- Webhook Service: http://localhost:8091 (container: webhook)
+- Database: localhost:5532 (container: postgres)
+
+### INTERNAL SERVICE COMMUNICATION:
+- Use service names instead of localhost:
+  - http://chatbot:8090 (not localhost:8090)
+  - http://webhook:8091 (not localhost:8091)
+  - postgres:5432 (not localhost:5532)  

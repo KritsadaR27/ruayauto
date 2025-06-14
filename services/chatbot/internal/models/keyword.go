@@ -14,6 +14,7 @@ type Keyword struct {
 }
 
 type AutoReplyRequest struct {
+	Platform  string `json:"platform"`
 	PageID    string `json:"page_id"`
 	UserID    string `json:"user_id"`
 	Content   string `json:"content"`

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import type { KeywordData, Pair, Settings, FilterSettings, FallbackSettings } from '../types/keyword'
 
 const defaultSettings: Settings = {
-  defaultResponses: ['ขอบคุณสำหรับข้อความครับ', 'ได้รับข้อความแล้วครับ'],
+  defaultResponses: ['ขอบคุณสำหรับข้อความทดสอบครับ', 'ได้รับข้อความทดสอบแล้วครับ'],
   enableDefault: true,
   noTag: false,
   noSticker: false,
@@ -25,17 +25,17 @@ const defaultSettings: Settings = {
 const initialData: KeywordData = {
   pairs: [
     {
-      keywords: ['สวัสดี', 'hello', 'hi'],
+      keywords: ['xyztest123', 'qwertyuiop987', 'zxcvbnm456'],
       responses: [
-        { text: 'สวัสดีครับ! ยินดีต้อนรับ' },
-        { text: 'Hello! Welcome to our page' }
+        { text: 'This is a test response for greeting keywords' },
+        { text: 'Test greeting response activated' }
       ]
     },
     {
-      keywords: ['ราคา', 'price', 'เท่าไหร่'],
+      keywords: ['abcdefg789', 'mnbvcxz321', 'poiuytrewq654'],
       responses: [
-        { text: 'สามารถดูราคาได้ที่เว็บไซต์ของเราครับ' },
-        { text: 'Please check our website for pricing' }
+        { text: 'This is a test response for pricing keywords' },
+        { text: 'Test pricing response activated' }
       ]
     }
   ],

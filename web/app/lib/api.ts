@@ -1,7 +1,7 @@
 // Next.js 15 enhanced caching API functions
 export async function getKeywords() {
   try {
-    const response = await fetch('http://localhost:3006/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/keywords', {
       next: { 
         revalidate: 30,
         tags: ['keywords']
@@ -21,7 +21,7 @@ export async function getKeywords() {
 
 export async function getSystemHealth() {
   try {
-    const response = await fetch('http://localhost:3006/health', {
+    const response = await fetch('http://chatbot:8090/health', {
       next: { 
         revalidate: 10,
         tags: ['health']
