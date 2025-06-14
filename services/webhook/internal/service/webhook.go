@@ -76,7 +76,7 @@ func (s *WebhookService) sendToChatbot(msg *model.UnifiedMessage) (*model.Chatbo
 
 	// Send HTTP request to chatbot service
 	resp, err := s.httpClient.Post(
-		s.chatbotURL+"/api/process",
+		s.chatbotURL+"/process",
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)

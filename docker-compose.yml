@@ -60,7 +60,12 @@ services:
       - WEBHOOK_HOST=0.0.0.0
       - CHATBOT_URL=http://chatbot:8090
       - FACEBOOK_ENABLED=true
-      - LINE_ENABLED=true
+      - FACEBOOK_VERIFY_TOKEN=ruayAutoMsgFACEBOOK_VERIFY_TOKEN
+      - FACEBOOK_PAGE_TOKEN=EAAXdo9949QMBO15NPZBwoJ6Y0U0bY7U4C1rnmh5aIh8tMCKXPnwMKGVTjUBd2hRwz183kGqTUQ35fLTTDeFx8riOV1QwZAZCAIFTIOYVSwRrgxuMdRIFqZCPev2GFsI2L5qKR17DnY7VvAUEG84caEXmMmlQArBoi30Vd32b9WxK0fQFpzF1qMHOEyrS5K5nJBdlfM3EK1hJrxGUiwZDZD
+      - FACEBOOK_APP_SECRET=2e8f5d891c01ff56ecf2a662dfa2c9ea
+      - LINE_ENABLED=false
+      - LINE_CHANNEL_SECRET=placeholder
+      - LINE_CHANNEL_TOKEN=placeholder
     depends_on:
       - chatbot
     healthcheck:
