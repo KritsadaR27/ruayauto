@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import RuleCard from './RuleCard'
 
 // Custom Icon Components
@@ -131,42 +131,55 @@ const FacebookCommentMultiPage = () => {
 
   const [showPageManager, setShowPageManager] = useState(false)
 
-  const [rules, setRules] = useState<Rule[]>([
-    {
-      id: 1,
-      name: 'ทักทายทั่วไป',
-      keywords: ['สวัสดี', 'hello', 'hi', 'หวัดดี'],
-      responses: [
-        { text: 'สวัสดีครับ! ยินดีต้อนรับ' },
-        { text: 'Hello! Welcome to our page' }
-      ],
-      enabled: true,
-      expanded: true,
-      selectedPages: ['fb1', 'fb2', 'fb3'],
-      hideAfterReply: false,
-      sendToInbox: false,
-      inboxMessage: '',
-      inboxImage: undefined,
-      hasManuallyEditedTitle: true // This title was set manually
-    },
-    {
-      id: 2,
-      name: 'สอบถามราคา',
-      keywords: ['ราคา', 'price', 'เท่าไหร่', 'กี่บาท'],
-      responses: [
-        { text: 'สามารถดูราคาได้ที่เว็บไซต์ของเราครับ' },
-        { text: 'Please check our website for pricing' }
-      ],
-      enabled: true,
-      expanded: false,
-      selectedPages: ['fb1', 'fb2'],
-      hideAfterReply: true,
-      sendToInbox: true,
-      inboxMessage: 'ขอบคุณที่สนใจครับ ส่งราคาให้ทาง inbox แล้วนะครับ',
-      inboxImage: undefined,
-      hasManuallyEditedTitle: true // This title was set manually
+  // Initialize with empty array and load from database
+  const [rules, setRules] = useState<Rule[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load data from API when component mounts
+  useEffect(() => {
+    const loadRulesFromAPI = async () => {
+      try {
+        console.log('🚀 Loading keywords from API...')
+        setLoading(true)
+        const response = await fetch('/api/keywords')
+        if (!response.ok) {
+          throw new Error('Failed to load keywords')
+        }
+
+        const result = await response.json()
+        console.log('📦 API Response:', result)
+        if (result.success && result.data?.data?.pairs) {
+          // Transform database format to frontend format
+          const transformedRules: Rule[] = result.data.data.pairs.map((item: any, index: number) => ({
+            id: item.id,
+            name: item.keyword, // Use keyword as name for now
+            keywords: [item.keyword], // Single keyword for now
+            responses: [{ text: item.response }], // Single response for now
+            enabled: item.is_active,
+            expanded: false,
+            selectedPages: ['fb1', 'fb2'], // Default pages
+            hideAfterReply: false,
+            sendToInbox: false,
+            inboxMessage: '',
+            inboxImage: undefined,
+            hasManuallyEditedTitle: false
+          }))
+          setRules(transformedRules)
+        } else {
+          // If no data, keep empty array
+          setRules([])
+        }
+      } catch (error) {
+        console.error('Error loading rules:', error)
+        // Keep empty array if loading fails
+        setRules([])
+      } finally {
+        setLoading(false)
+      }
     }
-  ])
+
+    loadRulesFromAPI()
+  }, [])
 
   const [fallbackRules, setFallbackRules] = useState<FallbackRule[]>([
     {
@@ -197,7 +210,66 @@ const FacebookCommentMultiPage = () => {
     }))
   }
 
-  const addRule = () => {
+  // Function to save rule to database
+  const saveRuleToDatabase = async (rule: Rule) => {
+    try {
+      // Check if this is a new rule (timestamp-based ID) or existing rule
+      const isNewRule = rule.id > 1000000000000 // Timestamp-based IDs are much larger
+
+      if (isNewRule) {
+        // For new rules, use POST to create
+        const response = await fetch('/api/keywords', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pairs: [{
+              keyword: rule.keywords[0] || rule.name, // Use first keyword or name
+              response: rule.responses[0]?.text || '', // Use first response
+            }]
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save new rule to database')
+        }
+
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save new rule')
+        }
+      } else {
+        // For existing rules, use PUT to update
+        const response = await fetch(`/api/keywords/${rule.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            keyword: rule.keywords[0] || rule.name, // Use first keyword or name
+            response: rule.responses[0]?.text || '', // Use first response
+            is_active: rule.enabled,
+            priority: 1 // Default priority
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update rule in database')
+        }
+
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update rule')
+        }
+      }
+    } catch (error) {
+      console.error('Error saving rule to database:', error)
+      throw error
+    }
+  }
+
+  const addRule = async () => {
     const newRule: Rule = {
       id: Date.now(),
       name: `รายการที่ ${rules.length + 1}`, // Start with default title
@@ -212,7 +284,12 @@ const FacebookCommentMultiPage = () => {
       inboxImage: undefined,
       hasManuallyEditedTitle: false // Track manual editing
     }
+
+    // Add to local state first
     setRules([...rules, newRule])
+
+    // Save to database (will be saved when user adds content)
+    // Note: We'll save when user actually enters keywords/responses
 
     // ✅ ปรับปรุง auto-focus logic
     setTimeout(() => {
@@ -227,31 +304,95 @@ const FacebookCommentMultiPage = () => {
     }, 200) // เพิ่ม delay เป็น 200ms
   }
 
-  const updateRule = (id: number, field: keyof Rule, value: any) => {
+  const updateRule = async (id: number, field: keyof Rule, value: any) => {
+    // Update local state immediately for responsive UI
     setRules(rules.map(rule =>
       rule.id === id ? { ...rule, [field]: value } : rule
     ))
+
+    // Save to database in background (only if rule has content)
+    try {
+      const updatedRule = rules.find(rule => rule.id === id)
+      if (updatedRule) {
+        const ruleWithUpdate = { ...updatedRule, [field]: value }
+        // Only save if rule has keywords and responses
+        if (ruleWithUpdate.keywords.length > 0 && ruleWithUpdate.responses.length > 0 && ruleWithUpdate.responses[0].text.trim()) {
+          await saveRuleToDatabase(ruleWithUpdate)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save rule:', error)
+      // Could add toast notification here for user feedback
+    }
   }
 
-  const updateResponse = (ruleId: number, responseIdx: number, field: keyof Response, value: any) => {
-    setRules(rules.map(rule => {
+  const updateResponse = async (ruleId: number, responseIdx: number, field: keyof Response, value: any) => {
+    // Update local state immediately
+    const updatedRules = rules.map(rule => {
       if (rule.id === ruleId) {
         const newResponses = [...rule.responses]
         newResponses[responseIdx] = { ...newResponses[responseIdx], [field]: value }
         return { ...rule, responses: newResponses }
       }
       return rule
-    }))
+    })
+    setRules(updatedRules)
+
+    // Save to database in background (only if rule has content)
+    try {
+      const updatedRule = updatedRules.find(rule => rule.id === ruleId)
+      if (updatedRule && updatedRule.keywords.length > 0 && updatedRule.responses.length > 0 && updatedRule.responses[0].text.trim()) {
+        await saveRuleToDatabase(updatedRule)
+      }
+    } catch (error) {
+      console.error('Failed to save response update:', error)
+    }
   }
 
-  const deleteRule = (id: number) => {
+  const deleteRule = async (id: number) => {
+    // Remove from local state first
     setRules(rules.filter(rule => rule.id !== id))
+
+    // Delete from database (only if it's not a timestamp-based new rule)
+    if (id < 1000000000000) {
+      try {
+        const response = await fetch(`/api/keywords/${id}`, {
+          method: 'DELETE',
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to delete rule from database')
+        }
+
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to delete rule')
+        }
+      } catch (error) {
+        console.error('Failed to delete rule:', error)
+        // Could show error message and restore the rule
+      }
+    }
   }
 
-  const toggleRule = (id: number) => {
-    setRules(rules.map(rule =>
+  const toggleRule = async (id: number) => {
+    // Update local state first
+    const updatedRules = rules.map(rule =>
       rule.id === id ? { ...rule, enabled: !rule.enabled } : rule
-    ))
+    )
+    setRules(updatedRules)
+
+    // Save to database (only if it's not a timestamp-based new rule)
+    if (id < 1000000000000) {
+      try {
+        const updatedRule = updatedRules.find(rule => rule.id === id)
+        if (updatedRule) {
+          await saveRuleToDatabase(updatedRule)
+        }
+      } catch (error) {
+        console.error('Failed to toggle rule:', error)
+      }
+    }
   }
 
   const toggleExpand = (id: number) => {
@@ -792,23 +933,35 @@ const FacebookCommentMultiPage = () => {
 
         {/* Rules List */}
         <div className="space-y-4 mb-6">
-          {rules.map((rule, index) => (
-            <RuleCard
-              key={rule.id}
-              rule={rule}
-              index={index}
-              connectedPages={connectedPages}
-              onUpdateRule={updateRule}
-              onUpdateResponse={updateResponse}
-              onDeleteRule={deleteRule}
-              onToggleRule={toggleRule}
-              onToggleExpand={toggleExpand}
-              onAddResponse={addResponse}
-              onTogglePageSelection={togglePageSelection}
-              onImageUpload={handleImageUpload}
-              onInboxImageUpload={handleInboxImageUpload}
-            />
-          ))}
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">กำลังโหลดข้อมูล...</span>
+            </div>
+          ) : rules.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg mb-2">ยังไม่มีกฎการตอบกลับ</p>
+              <p className="text-sm">เริ่มต้นสร้างกฎใหม่โดยคลิกปุ่ม "เพิ่มรายการใหม่"</p>
+            </div>
+          ) : (
+            rules.map((rule, index) => (
+              <RuleCard
+                key={rule.id}
+                rule={rule}
+                index={index}
+                connectedPages={connectedPages}
+                onUpdateRule={updateRule}
+                onUpdateResponse={updateResponse}
+                onDeleteRule={deleteRule}
+                onToggleRule={toggleRule}
+                onToggleExpand={toggleExpand}
+                onAddResponse={addResponse}
+                onTogglePageSelection={togglePageSelection}
+                onImageUpload={handleImageUpload}
+                onInboxImageUpload={handleInboxImageUpload}
+              />
+            ))
+          )}
         </div>
 
         {/* Add New Rule Button */}

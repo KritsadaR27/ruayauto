@@ -41,7 +41,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
       responses: editingResponses.filter(r => r.text.trim() !== '')
     }
     onUpdate(updatedSettings)
-  }, [editingResponses])
+  }, [editingResponses, onUpdate, settings])
 
   const handleResponseChange = (ridx: number, value: string) => {
     setEditingResponses(prev => prev.map((r, i) => 

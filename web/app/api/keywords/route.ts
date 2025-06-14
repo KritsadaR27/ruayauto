@@ -77,3 +77,39 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json()
+    
+    // Forward to backend API
+    const response = await fetch('http://chatbot:8090/api/keywords', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body)
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to delete from backend API')
+    }
+    
+    const data = await response.json()
+    
+    return Response.json({
+      success: true,
+      data: data,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('API Error:', error)
+    return Response.json(
+      { 
+        error: 'Failed to delete keywords',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

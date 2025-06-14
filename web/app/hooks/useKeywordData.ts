@@ -52,12 +52,12 @@ export function useKeywordData() {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await fetch('/api/keywords')
       if (!response.ok) {
         throw new Error('Failed to load keyword data')
       }
-      
+
       const result = await response.json()
       if (result.success && result.data) {
         // Transform backend data to frontend format

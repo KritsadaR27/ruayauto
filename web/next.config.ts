@@ -25,15 +25,15 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3006/api/:path*',
+        destination: 'http://chatbot:8090/api/:path*',
       },
       {
         source: '/webhook/:path*',
-        destination: 'http://localhost:3006/webhook/:path*',
+        destination: 'http://webhook:8091/webhook/:path*',
       },
       {
         source: '/health',
-        destination: 'http://localhost:3006/health',
+        destination: 'http://chatbot:8090/health',
       },
     ]
   },
