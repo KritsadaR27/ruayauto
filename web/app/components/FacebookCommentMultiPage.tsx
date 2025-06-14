@@ -139,16 +139,16 @@ const FacebookCommentMultiPage = () => {
   useEffect(() => {
     const loadRulesFromAPI = async () => {
       try {
-        console.log('🚀 Loading keywords from API...')
+        console.log('🚀 Loading rules from API...')
         setLoading(true)
-        const response = await fetch(`/api/keywords?_t=${Date.now()}`, {
+        const response = await fetch(`/api/rules?_t=${Date.now()}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache'
           }
         })
         if (!response.ok) {
-          throw new Error('Failed to load keywords')
+          throw new Error('Failed to load rules')
         }
 
         const result = await response.json()
@@ -287,7 +287,7 @@ const FacebookCommentMultiPage = () => {
         // Create a record for each keyword (all keywords will have all responses available)
         for (const keyword of keywords) {
           // For each keyword, we'll save with the first response (random selection happens in chatbot logic)
-          const response = await fetch('/api/keywords', {
+          const response = await fetch('/api/rules', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -320,7 +320,7 @@ const FacebookCommentMultiPage = () => {
         }
 
         // Update the existing record with first keyword and combined responses
-        const response = await fetch(`/api/keywords/${rule.id}`, {
+        const response = await fetch(`/api/rules/${rule.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -344,7 +344,7 @@ const FacebookCommentMultiPage = () => {
 
         // Create additional records for remaining keywords (if any)
         for (let i = 1; i < keywords.length; i++) {
-          const additionalResponse = await fetch('/api/keywords', {
+          const additionalResponse = await fetch('/api/rules', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -479,7 +479,7 @@ const FacebookCommentMultiPage = () => {
     // Delete from database (only if it's not a timestamp-based new rule)
     if (id < 1000000000000) {
       try {
-        const response = await fetch(`/api/keywords/${id}`, {
+        const response = await fetch(`/api/rules/${id}`, {
           method: 'DELETE',
         })
 

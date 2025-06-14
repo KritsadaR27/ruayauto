@@ -11,33 +11,29 @@ export type ConnectedPage = {
   enabled: boolean
 }
 
-export type Pair = {
+export type RulePair = {
   id?: string // Add unique ID for each pair
   title?: string // Custom title for each pair 
   hasManuallyEditedTitle?: boolean // Track if user manually edited title
-  keywords: string[]
-  responses: Response[] // Change from string[] to Response[]
-  // Individual settings for each pair
+  rules: string[]
+  responses: Response[]
   hideCommentsAfterReply?: boolean
   enableInboxIntegration?: boolean
   inboxResponse?: string
   inboxImage?: string
-  // New design properties
-  enabled?: boolean // Toggle for enabling/disabling the rule
-  expanded?: boolean // Toggle for expanding/collapsing the card
-  // Multi-page support
-  selectedPages?: string[] // Array of page IDs this rule applies to
+  enabled?: boolean
+  expanded?: boolean
+  selectedPages?: string[]
 }
 
 export type FilterSettings = {
-  skipMentions: boolean  // Skip comments with @ mentions
-  skipStickers: boolean  // Skip comments with emoji/stickers
+  skipMentions: boolean
+  skipStickers: boolean
 }
 
 export type FallbackSettings = {
   enabled: boolean
   responses: Response[]
-  // Multi-page support for fallback
   selectedPages?: string[]
   hideAfterReply?: boolean
   sendToInbox?: boolean
@@ -54,27 +50,25 @@ export type Settings = {
   enableInboxIntegration: boolean
   inboxResponse: string
   inboxImage?: string
-  // New settings
   filterSettings: FilterSettings
   fallbackSettings: FallbackSettings
 }
 
-export type KeywordData = {
-  pairs: Pair[]
+export type RuleData = {
+  rules: RulePair[]
 } & Settings
 
-// Additional types for the ruayAutoMsg system
-export type Keyword = {
+export type Rule = {
   id: number
-  keyword: string
+  rule: string
   response: string
   is_active: boolean
   created_at: string
   updated_at: string
 }
 
-export type KeywordResponse = {
-  pairs: Keyword[]
+export type RuleResponse = {
+  pairs: Rule[]
   total?: number
   success?: boolean
 }
@@ -86,5 +80,3 @@ export type ApiResponse<T = any> = {
   message?: string
   timestamp?: string
 }
-
-// Refactor: rename to rule.ts, change all keyword(s) to rule(s) in types and comments

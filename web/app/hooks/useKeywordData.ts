@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { KeywordData, Pair, Settings, FilterSettings, FallbackSettings } from '../types/keyword'
+import type { RuleData, RulePair, Settings, FilterSettings, FallbackSettings } from '../types/rule'
 
 const defaultSettings: Settings = {
   defaultResponses: ['ขอบคุณสำหรับข้อความทดสอบครับ', 'ได้รับข้อความทดสอบแล้วครับ'],
@@ -22,28 +22,9 @@ const defaultSettings: Settings = {
   }
 }
 
-const initialData: KeywordData = {
-  pairs: [
-    {
-      keywords: ['xyztest123', 'qwertyuiop987', 'zxcvbnm456'],
-      responses: [
-        { text: 'This is a test response for greeting keywords' },
-        { text: 'Test greeting response activated' }
-      ]
-    },
-    {
-      keywords: ['abcdefg789', 'mnbvcxz321', 'poiuytrewq654'],
-      responses: [
-        { text: 'This is a test response for pricing keywords' },
-        { text: 'Test pricing response activated' }
-      ]
-    }
-  ],
-  ...defaultSettings
-}
-
-export function useKeywordData() {
-  const [data, setData] = useState<KeywordData>(initialData)
+// Remove initialData and use undefined as initial state
+export function useRuleData() {
+  const [data, setData] = useState<RuleData | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,22 +34,22 @@ export function useKeywordData() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/keywords')
+      const response = await fetch('/api/rules')
       if (!response.ok) {
-        throw new Error('Failed to load keyword data')
+        throw new Error('Failed to load rule data')
       }
 
       const result = await response.json()
       if (result.success && result.data) {
         // Transform backend data to frontend format
-        const transformedData: KeywordData = {
-          pairs: result.data.pairs || [],
+        const transformedData: RuleData = {
+          rules: result.data.pairs || [],
           ...defaultSettings
         }
         setData(transformedData)
       }
     } catch (err) {
-      console.error('Error loading keyword data:', err)
+      console.error('Error loading rule data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setLoading(false)
@@ -76,26 +57,26 @@ export function useKeywordData() {
   }
 
   // Save data to API
-  const saveData = async (newData: KeywordData) => {
+  const saveData = async (newData: RuleData) => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/keywords', {
+      const response = await fetch('/api/rules', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          pairs: newData.pairs.map(pair => ({
-            keyword: pair.keywords.join(','),
-            response: pair.responses.join('|')
+          pairs: newData.rules.map(rule => ({
+            rule: rule.rules.join(','),
+            response: rule.responses.map(r => r.text).join('|')
           }))
         })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save keyword data')
+        throw new Error('Failed to save rule data')
       }
 
       const result = await response.json()
@@ -105,7 +86,7 @@ export function useKeywordData() {
         throw new Error(result.error || 'Save failed')
       }
     } catch (err) {
-      console.error('Error saving keyword data:', err)
+      console.error('Error saving rule data:', err)
       setError(err instanceof Error ? err.message : 'Failed to save data')
       throw err
     } finally {
@@ -113,56 +94,65 @@ export function useKeywordData() {
     }
   }
 
-  // Update a specific pair
-  const updatePair = (index: number, pair: Pair) => {
-    const newData = {
+  // Update a specific rule
+  const updateRule = (index: number, rule: RulePair) => {
+    if (!data) return
+    const newData: RuleData = {
       ...data,
-      pairs: data.pairs.map((p, i) => i === index ? pair : p)
+      rules: data.rules.map((r, i) => i === index ? rule : r)
     }
     setData(newData)
   }
 
-  // Add a new pair
-  const addPair = (pair: Pair) => {
-    const newData = {
+  // Add a new rule
+  const addRule = (rule: RulePair) => {
+    if (!data) return
+    const newData: RuleData = {
       ...data,
-      pairs: [...data.pairs, pair]
+      rules: [...data.rules, rule]
     }
     setData(newData)
   }
 
-  // Delete a pair
-  const deletePair = (index: number) => {
-    const newData = {
+  // Delete a rule
+  const deleteRule = (index: number) => {
+    if (!data) return
+    const newData: RuleData = {
       ...data,
-      pairs: data.pairs.filter((_, i) => i !== index)
+      rules: data.rules.filter((_, i) => i !== index)
     }
     setData(newData)
   }
 
   // Update settings
   const updateSettings = (settings: Settings) => {
-    const newData = {
+    if (!data) return
+    const newData: RuleData = {
       ...data,
-      ...settings
+      ...settings,
+      rules: data.rules
     }
     setData(newData)
   }
 
   // Update filter settings
   const updateFilterSettings = (filterSettings: FilterSettings) => {
-    const newData = {
+    if (!data) return
+    const newData: RuleData = {
       ...data,
-      filterSettings
+      filterSettings,
+      rules: data.rules
     }
     setData(newData)
   }
 
   // Update fallback settings
   const updateFallbackSettings = (fallbackSettings: FallbackSettings) => {
-    const newData = {
+    if (!data) return
+    const newData: RuleData = {
       ...data,
-      fallbackSettings
+      fallbackSettings,
+      rules: data.rules
     }
     setData(newData)
   }
@@ -178,9 +168,9 @@ export function useKeywordData() {
     error,
     loadData,
     saveData,
-    updatePair,
-    addPair,
-    deletePair,
+    updateRule,
+    addRule,
+    deleteRule,
     updateSettings,
     updateFilterSettings,
     updateFallbackSettings

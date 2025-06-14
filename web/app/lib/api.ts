@@ -1,20 +1,20 @@
 // Next.js 15 enhanced caching API functions
-export async function getKeywords() {
+export async function getRules() {
   try {
-    const response = await fetch('http://chatbot:8090/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/rules', {
       next: { 
         revalidate: 30,
-        tags: ['keywords']
+        tags: ['rules']
       }
     })
     
     if (!response.ok) {
-      throw new Error('Failed to fetch keywords')
+      throw new Error('Failed to fetch rules')
     }
     
     return await response.json()
   } catch (error) {
-    console.error('Error fetching keywords:', error)
+    console.error('Error fetching rules:', error)
     return { pairs: [] }
   }
 }
