@@ -2,8 +2,8 @@
 
 import type { KeywordData, Pair, ApiResponse } from '../types/keyword'
 
-// Server action สำหรับ save keyword data
-export async function saveKeywordData(data: KeywordData): Promise<ApiResponse> {
+// Server action สำหรับ save rule data
+export async function saveRuleData(data: KeywordData): Promise<ApiResponse> {
   try {
     // Transform data for backend API
     const payload = {
@@ -13,7 +13,7 @@ export async function saveKeywordData(data: KeywordData): Promise<ApiResponse> {
       }))
     }
 
-    const response = await fetch('http://chatbot:8090/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/rules', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44,10 +44,10 @@ export async function saveKeywordData(data: KeywordData): Promise<ApiResponse> {
   }
 }
 
-// Server action สำหรับ load keyword data
-export async function loadKeywordData(): Promise<ApiResponse<KeywordData>> {
+// Server action สำหรับ load rule data
+export async function loadRuleData(): Promise<ApiResponse<KeywordData>> {
   try {
-    const response = await fetch('http://chatbot:8090/api/keywords', {
+    const response = await fetch('http://chatbot:8090/api/rules', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

@@ -65,7 +65,7 @@ const FacebookCommentMultiPage = () => {
             try {
                 console.log('🚀 Loading keywords from API...')
                 setLoading(true)
-                const response = await fetch(`/api/keywords?_t=${Date.now()}`, {
+                const response = await fetch(`/api/rules?_t=${Date.now()}`, {
                     cache: 'no-store',
                     headers: {
                         'Cache-Control': 'no-cache'
@@ -127,7 +127,7 @@ const FacebookCommentMultiPage = () => {
 
                 if (isNewRule) {
                     // For new rules, use POST to create
-                    const response = await fetch('/api/keywords', {
+                    const response = await fetch('/api/rules', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ const FacebookCommentMultiPage = () => {
                     }
                 } else {
                     // For existing rules, use PUT to update
-                    const response = await fetch(`/api/keywords/${rule.id}`, {
+                    const response = await fetch(`/api/rules/${rule.id}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',

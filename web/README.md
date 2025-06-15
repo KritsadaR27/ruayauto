@@ -101,7 +101,7 @@ The frontend automatically proxies API requests to the backend:
 ```
 Frontend (Next.js) :3000
 ├── /health → Backend :3006/health
-├── /api/keywords → Backend :3006/api/keywords
+├── /api/rules → Backend :3006/api/rules
 └── /webhook/* → Backend :3006/webhook/*
 ```
 

@@ -71,6 +71,7 @@ func main() {
 
 	// Health check endpoint
 	router.GET("/health", webhookHandler.HealthCheck)
+	router.HEAD("/health", webhookHandler.HealthCheck)
 
 	// Webhook endpoints
 	api := router.Group("/webhook")
