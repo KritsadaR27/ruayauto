@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { 
-  PlusIcon, 
+import {
+  PlusIcon,
   TrashIcon,
   PhotoIcon,
   ExclamationTriangleIcon,
@@ -10,6 +10,7 @@ import {
   InboxIcon
 } from '@heroicons/react/24/outline'
 import type { Response } from '../types/keyword'
+import SimpleResponseManager from './SimpleResponseManager'
 
 interface FallbackSettings {
   enabled: boolean
@@ -27,8 +28,8 @@ interface Props {
 
 export default function FallbackCard({ settings, onUpdate }: Props) {
   const [editingResponses, setEditingResponses] = useState<Response[]>(
-    settings.responses && settings.responses.length > 0 
-      ? settings.responses 
+    settings.responses && settings.responses.length > 0
+      ? settings.responses
       : [{ text: '' }]
   )
   const responseImageRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
@@ -44,7 +45,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
   }, [editingResponses, onUpdate, settings])
 
   const handleResponseChange = (ridx: number, value: string) => {
-    setEditingResponses(prev => prev.map((r, i) => 
+    setEditingResponses(prev => prev.map((r, i) =>
       i === ridx ? { ...r, text: value } : r
     ))
   }
@@ -66,7 +67,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
       const reader = new FileReader()
       reader.onload = (e) => {
         const base64 = e.target?.result as string
-        setEditingResponses(prev => prev.map((r, i) => 
+        setEditingResponses(prev => prev.map((r, i) =>
           i === ridx ? { ...r, image: base64 } : r
         ))
       }
@@ -156,89 +157,13 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                   {editingResponses.length} คำตอบ
                 </span>
               </div>
-              
-              <div className="space-y-4">
-                {editingResponses.map((response, ridx) => (
-                  <div key={ridx} className="bg-white border-2 border-amber-200 rounded-lg p-4 space-y-3 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-medium text-amber-700 bg-amber-200 px-2 py-1 rounded-full">
-                        คำตอบที่ {ridx + 1}
-                      </span>
-                      {editingResponses.length > 1 && (
-                        <button 
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" 
-                          onClick={() => deleteResponse(ridx)}
-                          title="ลบคำตอบนี้"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
 
-                    <div className="flex items-start space-x-2">
-                      <textarea
-                        className="flex-1 px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 focus:shadow-lg resize-none text-sm transition-all duration-200"
-                        value={response.text}
-                        onChange={(e) => handleResponseChange(ridx, e.target.value)}
-                        placeholder="ข้อความตอบกลับ"
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          ref={(el) => {
-                            responseImageRefs.current[ridx] = el
-                          }}
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleResponseImageUpload(ridx, e)}
-                          className="hidden"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => responseImageRefs.current[ridx]?.click()}
-                          className="btn-small-indigo"
-                        >
-                          <PhotoIcon className="h-3 w-3 mr-1" />
-                          {response.image ? 'เปลี่ยนรูป' : 'เพิ่มรูป'}
-                        </button>
-                      </div>
-
-                      {response.image && (
-                        <div className="flex items-center space-x-2">
-                          <img
-                            src={response.image}
-                            alt={`Fallback response ${ridx + 1} image`}
-                            className="h-12 w-12 object-cover rounded border border-amber-300"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingResponses(prev => prev.map((r, i) => 
-                                i === ridx ? { ...r, image: undefined } : r
-                              ))
-                            }}
-                            className="text-red-500 hover:text-red-700 text-xs"
-                          >
-                            ลบรูป
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-amber-200">
-                <button 
-                  onClick={addResponse}
-                  className="btn-small-indigo"
-                >
-                  <PlusIcon className="h-3 w-3 mr-1" />
-                  เพิ่มคำตอบ
-                </button>
+              <div className="mt-2">
+                <SimpleResponseManager
+                  ruleId={0}
+                  responses={editingResponses}
+                  onUpdateResponses={(newResponses) => setEditingResponses(newResponses)}
+                />
               </div>
             </div>
 
@@ -247,15 +172,15 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
               <h4 className="text-sm font-semibold text-amber-800 flex items-center mb-4">
                 ⚡ ฟีเจอร์เสริม
               </h4>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Hide Comments */}
                 <label className="flex items-start space-x-3 cursor-pointer bg-white rounded-lg p-4 border-2 border-amber-200 hover:border-amber-400 transition-all shadow-sm hover:shadow-md">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="mt-1 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                    checked={settings.hideCommentsAfterReply || false} 
-                    onChange={(e) => handleSettingChange('hideCommentsAfterReply', e.target.checked)} 
+                    checked={settings.hideCommentsAfterReply || false}
+                    onChange={(e) => handleSettingChange('hideCommentsAfterReply', e.target.checked)}
                   />
                   <div>
                     <span className="text-sm font-medium text-gray-900 flex items-center">
@@ -270,11 +195,11 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
 
                 {/* Inbox Integration */}
                 <label className="flex items-start space-x-3 cursor-pointer bg-white rounded-lg p-4 border-2 border-amber-200 hover:border-amber-400 transition-all shadow-sm hover:shadow-md">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     className="mt-1 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                    checked={settings.enableInboxIntegration || false} 
-                    onChange={(e) => handleSettingChange('enableInboxIntegration', e.target.checked)} 
+                    checked={settings.enableInboxIntegration || false}
+                    onChange={(e) => handleSettingChange('enableInboxIntegration', e.target.checked)}
                   />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-gray-900 flex items-center">
@@ -294,7 +219,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                   <h5 className="text-sm font-medium text-amber-800 flex items-center">
                     📧 ตั้งค่า Inbox
                   </h5>
-                  
+
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       ข้อความใน Inbox:
@@ -307,7 +232,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                       rows={2}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-2">
                       <PhotoIcon className="h-4 w-4 inline mr-1" />
@@ -320,15 +245,15 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                         accept="image/*"
                         onChange={handleInboxImageUpload}
                         className="hidden"
+                        id="inbox-image-fallback"
                       />
-                      <button
-                        type="button"
-                        onClick={() => inboxImageRef.current?.click()}
-                        className="btn-small-indigo"
+                      <label
+                        htmlFor="inbox-image-fallback"
+                        className="inline-flex items-center px-3 py-1 text-sm bg-white hover:bg-gray-50 border border-amber-300 rounded-md cursor-pointer transition-colors"
                       >
-                        <PhotoIcon className="h-3 w-3 mr-1" />
-                        เลือกรูป
-                      </button>
+                        <PhotoIcon className="h-4 w-4 mr-1" />
+                        <span className="ml-1">{settings.inboxImage ? 'เปลี่ยนรูปใน Inbox' : 'เพิ่มรูปใน Inbox'}</span>
+                      </label>
                       {settings.inboxImage && (
                         <div className="flex items-center space-x-2">
                           <img
@@ -341,7 +266,7 @@ export default function FallbackCard({ settings, onUpdate }: Props) {
                             onClick={() => handleSettingChange('inboxImage', undefined)}
                             className="text-red-500 hover:text-red-700 text-xs"
                           >
-                            ลบ
+                            ลบรูป
                           </button>
                         </div>
                       )}

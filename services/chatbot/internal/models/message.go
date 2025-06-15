@@ -17,12 +17,4 @@ type Message struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
-type FacebookPage struct {
-	ID          int       `json:"id" db:"id"`
-	PageID      string    `json:"page_id" db:"page_id"`
-	PageName    string    `json:"page_name" db:"page_name"`
-	AccessToken string    `json:"access_token,omitempty" db:"access_token"`
-	IsActive    bool      `json:"is_active" db:"is_active"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
-}
+

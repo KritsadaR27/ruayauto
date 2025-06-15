@@ -28,10 +28,15 @@ func main() {
 	// Initialize layers
 	ruleRepo := repository.NewRuleRepository(db)
 	messageRepo := repository.NewMessageRepository(db)
+	facebookRepo := repository.NewFacebookRepository(db)
+	
 	chatbotService := services.NewChatbotService(ruleRepo, messageRepo)
+	facebookService := services.NewFacebookService(facebookRepo, cfg.FacebookAppID, cfg.FacebookAppSecret, "v19.0")
+	
 	chatbotHandler := handlers.NewChatbotHandler(chatbotService)
 	ruleHandler := handlers.NewRuleHandler(ruleRepo)
 	messageHandler := handlers.NewMessageHandler(messageRepo)
+	facebookHandler := handlers.NewFacebookHandler(facebookService)
 
 	// Setup routes
 	r := gin.Default()
@@ -60,7 +65,27 @@ func main() {
 		
 		// Messages for AI analysis
 		api.GET("/messages", messageHandler.GetMessages)
+		
+		// Facebook integration
+		facebook := api.Group("/facebook")
+		{
+			// OAuth flow
+			facebook.POST("/auth/login", facebookHandler.AuthLogin)
+			facebook.GET("/auth/callback", facebookHandler.AuthCallback)
+			facebook.GET("/auth/status", facebookHandler.AuthStatus)
+			facebook.POST("/auth/logout", facebookHandler.AuthLogout)
+			
+			// Page management
+			facebook.GET("/pages", facebookHandler.GetPages)
+			facebook.POST("/pages/connect", facebookHandler.ConnectPage)
+			facebook.POST("/pages/disconnect", facebookHandler.DisconnectPage)
+			facebook.GET("/pages/connected", facebookHandler.GetConnectedPages)
+		}
 	}
+	
+	// Facebook webhook endpoints (outside of /api group)
+	r.GET("/webhook/facebook", facebookHandler.WebhookVerify)
+	r.POST("/webhook/facebook", facebookHandler.WebhookReceive)
 
 	log.Printf("🎯 Server starting on %s", cfg.GetAddr())
 	if err := r.Run(cfg.GetAddr()); err != nil {

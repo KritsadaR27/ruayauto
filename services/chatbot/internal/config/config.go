@@ -7,26 +7,30 @@ import (
 )
 
 type Config struct {
-	Port      string
-	Host      string
-	DBHost    string
-	DBPort    int
-	DBName    string
-	DBUser    string
-	DBPass    string
-	DBSSLMode string
+	Port             string
+	Host             string
+	DBHost           string
+	DBPort           int
+	DBName           string
+	DBUser           string
+	DBPass           string
+	DBSSLMode        string
+	FacebookAppID    string
+	FacebookAppSecret string
 }
 
 func Load() (*Config, error) {
 	return &Config{
-		Port:      getEnv("PORT", "8090"),
-		Host:      getEnv("HOST", "0.0.0.0"),
-		DBHost:    getEnv("DB_HOST", "localhost"),
-		DBPort:    getEnvInt("DB_PORT", 5432),
-		DBName:    getEnv("DB_NAME", "chatbot_mvp"),
-		DBUser:    getEnv("DB_USER", "chatbot_user"),
-		DBPass:    getEnv("DB_PASSWORD", "chatbot_pass123"),
-		DBSSLMode: getEnv("DB_SSL_MODE", "disable"),
+		Port:             getEnv("PORT", "8090"),
+		Host:             getEnv("HOST", "0.0.0.0"),
+		DBHost:           getEnv("DB_HOST", "localhost"),
+		DBPort:           getEnvInt("DB_PORT", 5432),
+		DBName:           getEnv("DB_NAME", "chatbot_mvp"),
+		DBUser:           getEnv("DB_USER", "chatbot_user"),
+		DBPass:           getEnv("DB_PASSWORD", "chatbot_pass123"),
+		DBSSLMode:        getEnv("DB_SSL_MODE", "disable"),
+		FacebookAppID:    getEnv("FACEBOOK_APP_ID", ""),
+		FacebookAppSecret: getEnv("FACEBOOK_APP_SECRET", ""),
 	}, nil
 }
 
