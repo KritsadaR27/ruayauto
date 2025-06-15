@@ -95,14 +95,16 @@ func (s *ChatbotService) ProcessMessage(ctx context.Context, req *models.AutoRep
 		return s.handleLegacyResponse(ctx, rule, message, pageID)
 	}
 
-	var selectedResponse string
+	var selectedResponse *models.RuleResponse
+	var responseText string
 
 	// If we have multiple responses, randomly select one
 	if len(responses) > 0 {
 		selectedResponse = s.selectRandomResponse(responses)
+		responseText = selectedResponse.ResponseText
 	} else {
 		// Fall back to legacy comma-separated responses in the Response field
-		selectedResponse = s.selectLegacyResponse(rule.Response)
+		responseText = s.selectLegacyResponse(rule.Response)
 	}
 
 	// Update rate limit
@@ -131,15 +133,24 @@ func (s *ChatbotService) ProcessMessage(ctx context.Context, req *models.AutoRep
 
 	// Mark legacy message as processed
 	if message.ID != 0 {
-		s.messageRepo.MarkProcessed(ctx, message.ID, selectedResponse)
+		s.messageRepo.MarkProcessed(ctx, message.ID, responseText)
 	}
 
-	return &models.AutoReplyResponse{
+	// Create response with composite support
+	response := &models.AutoReplyResponse{
 		ShouldReply:    true,
-		Response:       selectedResponse,
+		Response:       responseText,
 		MatchedKeyword: strings.Join(rule.Keywords, ", "),
 		MatchType:      rule.MatchType,
-	}, nil
+	}
+
+	// Add media information if available
+	if selectedResponse != nil {
+		response.HasMedia = selectedResponse.HasMedia
+		response.MediaDescription = selectedResponse.MediaDescription
+	}
+
+	return response, nil
 }
 
 // Helper methods for enhanced functionality
@@ -187,9 +198,9 @@ func (s *ChatbotService) handleLegacyResponse(ctx context.Context, rule *models.
 }
 
 // selectRandomResponse selects a random response from keyword responses with weight consideration
-func (s *ChatbotService) selectRandomResponse(responses []*models.RuleResponse) string {
+func (s *ChatbotService) selectRandomResponse(responses []*models.RuleResponse) *models.RuleResponse {
 	if len(responses) == 0 {
-		return ""
+		return nil
 	}
 
 	// Calculate total weight
@@ -201,7 +212,7 @@ func (s *ChatbotService) selectRandomResponse(responses []*models.RuleResponse) 
 	// If no weights, select randomly
 	if totalWeight == 0 {
 		rand.Seed(time.Now().UnixNano())
-		return responses[rand.Intn(len(responses))].ResponseText
+		return responses[rand.Intn(len(responses))]
 	}
 
 	// Select based on weight
@@ -212,12 +223,12 @@ func (s *ChatbotService) selectRandomResponse(responses []*models.RuleResponse) 
 	for _, resp := range responses {
 		currentWeight += resp.Weight
 		if randomWeight < currentWeight {
-			return resp.ResponseText
+			return resp
 		}
 	}
 
 	// Fallback to first response
-	return responses[0].ResponseText
+	return responses[0]
 }
 
 // selectRandomFallbackResponse selects a random fallback response with weight consideration

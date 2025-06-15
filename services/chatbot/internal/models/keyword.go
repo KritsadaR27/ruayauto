@@ -30,10 +30,12 @@ type AutoReplyRequest struct {
 }
 
 type AutoReplyResponse struct {
-	ShouldReply    bool   `json:"should_reply"`
-	Response       string `json:"response,omitempty"`
-	MatchedKeyword string `json:"matched_keyword,omitempty"`
-	MatchType      string `json:"match_type,omitempty"`
+	ShouldReply      bool    `json:"should_reply"`
+	Response         string  `json:"response,omitempty"`
+	HasMedia         bool    `json:"has_media,omitempty"`
+	MediaDescription *string `json:"media_description,omitempty"`
+	MatchedKeyword   string  `json:"matched_keyword,omitempty"`
+	MatchType        string  `json:"match_type,omitempty"`
 }
 
 // New models for enhanced rules system

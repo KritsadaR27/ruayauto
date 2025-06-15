@@ -78,20 +78,43 @@ func (h *Handler) SendResponse(response *model.ChatbotResponse, originalMsg *mod
 	
 	// Send comment reply
 	if originalMsg.CommentID != "" {
-		_, err = h.client.SendComment(originalMsg.CommentID, response.Response)
-		if err != nil {
-			log.Printf("Failed to send Facebook comment reply: %v", err)
-			return fmt.Errorf("failed to send comment reply: %w", err)
+		// Check if this is a composite response (text + media)
+		if response.HasMedia && response.MediaDescription != nil && *response.MediaDescription != "" {
+			// For composite responses, send text + image
+			_, err = h.client.SendCommentWithImage(originalMsg.CommentID, response.Response, *response.MediaDescription)
+			if err != nil {
+				log.Printf("Failed to send Facebook composite comment reply: %v", err)
+				return fmt.Errorf("failed to send composite comment reply: %w", err)
+			}
+			log.Printf("Sent Facebook composite comment reply (text + image) to %s", originalMsg.CommentID)
+		} else {
+			// Regular text-only response
+			_, err = h.client.SendComment(originalMsg.CommentID, response.Response)
+			if err != nil {
+				log.Printf("Failed to send Facebook comment reply: %v", err)
+				return fmt.Errorf("failed to send comment reply: %w", err)
+			}
+			log.Printf("Sent Facebook comment reply to %s", originalMsg.CommentID)
 		}
-		log.Printf("Sent Facebook comment reply to %s", originalMsg.CommentID)
 	} else {
 		// Send direct message
-		_, err = h.client.SendMessage(originalMsg.UserID, response.Response)
-		if err != nil {
-			log.Printf("Failed to send Facebook message: %v", err)
-			return fmt.Errorf("failed to send message: %w", err)
+		if response.HasMedia && response.MediaDescription != nil && *response.MediaDescription != "" {
+			// For composite responses, send text + image
+			_, err = h.client.SendMessageWithImage(originalMsg.UserID, response.Response, *response.MediaDescription)
+			if err != nil {
+				log.Printf("Failed to send Facebook composite message: %v", err)
+				return fmt.Errorf("failed to send composite message: %w", err)
+			}
+			log.Printf("Sent Facebook composite message (text + image) to user %s", originalMsg.UserID)
+		} else {
+			// Regular text-only response
+			_, err = h.client.SendMessage(originalMsg.UserID, response.Response)
+			if err != nil {
+				log.Printf("Failed to send Facebook message: %v", err)
+				return fmt.Errorf("failed to send message: %w", err)
+			}
+			log.Printf("Sent Facebook message to user %s", originalMsg.UserID)
 		}
-		log.Printf("Sent Facebook message to user %s", originalMsg.UserID)
 	}
 	
 	return nil

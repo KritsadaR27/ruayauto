@@ -222,7 +222,7 @@ func (r *RuleRepository) FindMatching(ctx context.Context, content string) ([]*m
 // GetRuleResponses gets all responses for a rule
 func (r *RuleRepository) GetRuleResponses(ctx context.Context, ruleID int) ([]*models.RuleResponse, error) {
 	query := `
-		SELECT id, rule_id, response_text, response_type, media_url, weight, is_active, created_at
+		SELECT id, rule_id, response_text, response_type, media_url, has_media, media_description, weight, is_active, created_at
 		FROM rule_responses
 		WHERE rule_id = $1 AND is_active = true
 		ORDER BY weight DESC, created_at ASC
@@ -238,8 +238,8 @@ func (r *RuleRepository) GetRuleResponses(ctx context.Context, ruleID int) ([]*m
 		response := &models.RuleResponse{}
 		err := rows.Scan(
 			&response.ID, &response.RuleID, &response.ResponseText,
-			&response.ResponseType, &response.MediaURL, &response.Weight,
-			&response.IsActive, &response.CreatedAt,
+			&response.ResponseType, &response.MediaURL, &response.HasMedia, &response.MediaDescription,
+			&response.Weight, &response.IsActive, &response.CreatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -252,14 +252,14 @@ func (r *RuleRepository) GetRuleResponses(ctx context.Context, ruleID int) ([]*m
 // CreateRuleResponse creates a new response for a rule
 func (r *RuleRepository) CreateRuleResponse(ctx context.Context, response *models.RuleResponse) error {
 	query := `
-		INSERT INTO rule_responses (rule_id, response_text, response_type, media_url, weight, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO rule_responses (rule_id, response_text, response_type, media_url, has_media, media_description, weight, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, created_at
 	`
 	err := r.db.QueryRowContext(
 		ctx, query,
 		response.RuleID, response.ResponseText, response.ResponseType,
-		response.MediaURL, response.Weight, response.IsActive,
+		response.MediaURL, response.HasMedia, response.MediaDescription, response.Weight, response.IsActive,
 	).Scan(&response.ID, &response.CreatedAt)
 	return err
 }
@@ -268,13 +268,13 @@ func (r *RuleRepository) CreateRuleResponse(ctx context.Context, response *model
 func (r *RuleRepository) UpdateRuleResponse(ctx context.Context, response *models.RuleResponse) error {
 	query := `
 		UPDATE rule_responses 
-		SET response_text = $2, response_type = $3, media_url = $4, weight = $5, is_active = $6
+		SET response_text = $2, response_type = $3, media_url = $4, has_media = $5, media_description = $6, weight = $7, is_active = $8
 		WHERE id = $1
 	`
 	_, err := r.db.ExecContext(
 		ctx, query,
 		response.ID, response.ResponseText, response.ResponseType,
-		response.MediaURL, response.Weight, response.IsActive,
+		response.MediaURL, response.HasMedia, response.MediaDescription, response.Weight, response.IsActive,
 	)
 	return err
 }

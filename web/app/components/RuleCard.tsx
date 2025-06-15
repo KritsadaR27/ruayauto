@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import SimpleResponseManager from './SimpleResponseManager'
+import { Response } from '../types/rule'
 
 // Icons
 const PlusIcon = () => (
@@ -68,11 +70,6 @@ interface ConnectedPage {
     pageId: string
     connected: boolean
     enabled: boolean
-}
-
-interface Response {
-    text: string
-    image?: string
 }
 
 interface Rule {
@@ -268,7 +265,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
 
                     {/* Stats */}
                     <span className="text-sm text-gray-500">
-                        {rule.keywords.length} คีย์เวิร์ด 55• {rule.responses.length} คำตอบ • {rule.selectedPages.length} เพจ
+                        {rule.keywords.length} คีย์เวิร์ด • {rule.responses.length} คำตอบ • {rule.selectedPages.length} เพจ
                     </span>
                 </div>
 
@@ -280,7 +277,7 @@ const RuleCard: React.FC<RuleCardProps> = ({
                     >
                         บันทึก
                     </button>
-                    
+
                     <button
                         onClick={() => onToggleExpand(rule.id)}
                         className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
@@ -386,102 +383,13 @@ const RuleCard: React.FC<RuleCardProps> = ({
                         />
                     </div>
 
-                    {/* Responses Section */}
-                    <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <label className="block text-sm font-medium text-gray-700">
-                                คำตอบสำหรับคอมเมนต์
-                            </label>
-                            <div className="flex items-center text-sm text-gray-500">
-                                <ShuffleIcon />
-                                <span className="ml-1">ระบบจะสุ่มเลือก 1 คำตอบ</span>
-                                <InfoIcon />
-                            </div>
-                        </div>
-                        <div className="space-y-3 mb-3">
-                            {rule.responses.map((response, idx) => (
-                                <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
-                                    {/* Response Header */}
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-                                            คำตอบที่ {idx + 1}
-                                        </span>
-                                        {rule.responses.length > 1 && (
-                                            <button
-                                                onClick={() => {
-                                                    const newResponses = rule.responses.filter((_, i) => i !== idx)
-                                                    onUpdateRule(rule.id, 'responses', newResponses)
-                                                }}
-                                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                                            >
-                                                <TrashIcon />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-start space-x-2">
-                                        <div className="flex-1">
-                                            <textarea
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                                value={response.text}
-                                                onChange={(e) => onUpdateResponse(rule.id, idx, 'text', e.target.value)}
-                                                placeholder="ข้อความตอบกลับ"
-                                                rows={3}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => onImageUpload(rule.id, idx, e)}
-                                                className="hidden"
-                                                id={`image-${rule.id}-${idx}`}
-                                            />
-                                            <label
-                                                htmlFor={`image-${rule.id}-${idx}`}
-                                                className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md cursor-pointer transition-colors"
-                                            >
-                                                <PhotoIcon />
-                                                <span className="ml-1">{response.image ? 'เปลี่ยนรูป' : 'เลือกรูป'}</span>
-                                            </label>
-                                            {response.image && (
-                                                <div className="flex items-center space-x-2">
-                                                    <img
-                                                        src={response.image}
-                                                        alt="Response preview"
-                                                        className="h-8 w-8 object-cover rounded border"
-                                                    />
-                                                    <button
-                                                        onClick={() => onUpdateResponse(rule.id, idx, 'image', undefined)}
-                                                        className="text-red-500 hover:text-red-700 text-xs"
-                                                    >
-                                                        ลบรูป
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Add Response Button with dotted border */}
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                            <button
-                                onClick={() => onAddResponse(rule.id)}
-                                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 flex items-center justify-center transition-colors group"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <div className="w-6 h-6 border-2 border-dashed border-current rounded-full flex items-center justify-center group-hover:border-solid transition-all">
-                                        <PlusIcon />
-                                    </div>
-                                    <span className="font-medium">เพิ่มคำตอบ (เพื่อให้ระบบสุ่มเลือก)</span>
-                                </div>
-                            </button>
-                        </div>
+                    {/* Modern Response Management */}
+                    <div className="mt-6">
+                        <SimpleResponseManager
+                            ruleId={rule.id}
+                            responses={rule.responses}
+                            onUpdateResponses={(responses: Response[]) => onUpdateRule(rule.id, 'responses', responses)}
+                        />
                     </div>
 
                     {/* Feature Options */}

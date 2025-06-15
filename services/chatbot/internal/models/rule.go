@@ -20,12 +20,14 @@ type Rule struct {
 }
 
 type RuleResponse struct {
-	ID           int       `json:"id" db:"id"`
-	RuleID       int       `json:"rule_id" db:"rule_id"`
-	ResponseText string    `json:"response_text" db:"response_text"`
-	ResponseType string    `json:"response_type" db:"response_type"`
-	MediaURL     *string   `json:"media_url,omitempty" db:"media_url"`
-	Weight       int       `json:"weight" db:"weight"`
-	IsActive     bool      `json:"is_active" db:"is_active"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	ID               int       `json:"id" db:"id"`
+	RuleID           int       `json:"rule_id" db:"rule_id"`
+	ResponseText     string    `json:"response_text" db:"response_text"`
+	ResponseType     string    `json:"response_type" db:"response_type"`
+	MediaURL         *string   `json:"media_url,omitempty" db:"media_url"`
+	HasMedia         bool      `json:"has_media" db:"has_media"`
+	MediaDescription *string   `json:"media_description,omitempty" db:"media_description"`
+	Weight           int       `json:"weight" db:"weight"`
+	IsActive         bool      `json:"is_active" db:"is_active"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
 }

@@ -1,6 +1,13 @@
 export type Response = {
+  id?: number
   text: string
   image?: string // URL or base64 image for this specific response
+  response_type?: 'text' | 'image' | 'video' | 'composite'
+  media_url?: string
+  has_media?: boolean
+  media_description?: string
+  weight?: number // Weight for random selection (higher = more likely)
+  is_active?: boolean
 }
 
 export type ConnectedPage = {

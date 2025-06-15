@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import RuleCard from './RuleCard'
+import { Response } from '../types/rule'
 
 // Custom Icon Components
 const PlusIcon = () => (
@@ -85,11 +86,6 @@ interface ConnectedPage {
   pageId: string
   connected: boolean
   enabled: boolean
-}
-
-interface Response {
-  text: string
-  image?: string
 }
 
 interface Rule {

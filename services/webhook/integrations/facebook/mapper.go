@@ -85,6 +85,10 @@ func MapFromUnifiedResponse(response *model.ChatbotResponse, originalMsg *model.
 	
 	if response.ShouldReply {
 		result["response"] = response.Response
+		result["has_media"] = response.HasMedia
+		if response.MediaDescription != nil {
+			result["media_description"] = *response.MediaDescription
+		}
 		result["matched_keyword"] = response.MatchedKeyword
 		
 		// Set target based on message type
