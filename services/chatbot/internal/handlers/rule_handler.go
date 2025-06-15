@@ -110,3 +110,98 @@ func (h *RuleHandler) DeleteRule(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "rule deleted successfully"})
 }
+
+// GetRuleResponses returns all responses for a rule
+func (h *RuleHandler) GetRuleResponses(c *gin.Context) {
+	id := c.Param("id")
+	ruleID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rule ID"})
+		return
+	}
+
+	responses, err := h.repo.GetRuleResponses(c.Request.Context(), ruleID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": responses,
+	})
+}
+
+// CreateRuleResponse creates a new response for a rule
+func (h *RuleHandler) CreateRuleResponse(c *gin.Context) {
+	id := c.Param("id")
+	ruleID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid rule ID"})
+		return
+	}
+
+	var response models.RuleResponse
+	if err := c.ShouldBindJSON(&response); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response.RuleID = ruleID
+	if err := h.repo.CreateRuleResponse(c.Request.Context(), &response); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"data": response,
+	})
+}
+
+// UpdateRuleResponse updates a rule response
+func (h *RuleHandler) UpdateRuleResponse(c *gin.Context) {
+	responseID := c.Param("response_id")
+	respID, err := strconv.Atoi(responseID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid response ID"})
+		return
+	}
+
+	var response models.RuleResponse
+	if err := c.ShouldBindJSON(&response); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response.ID = respID
+	if err := h.repo.UpdateRuleResponse(c.Request.Context(), &response); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": response,
+	})
+}
+
+// DeleteRuleResponse deletes a rule response
+func (h *RuleHandler) DeleteRuleResponse(c *gin.Context) {
+	responseID := c.Param("response_id")
+	respID, err := strconv.Atoi(responseID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid response ID"})
+		return
+	}
+
+	if err := h.repo.DeleteRuleResponse(c.Request.Context(), respID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Response deleted successfully",
+	})
+}

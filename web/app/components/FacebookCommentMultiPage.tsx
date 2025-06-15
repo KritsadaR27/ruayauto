@@ -156,40 +156,28 @@ const FacebookCommentMultiPage = () => {
         if (result.success && result.data?.data?.pairs) {
           console.log('✅ Found pairs data:', result.data.data.pairs)
           
-          // Group keywords by response to create rules with multiple keywords
-          const responseGroups = new Map<string, any[]>()
-          
-          result.data.data.pairs.forEach((item: any) => {
-            const key = item.response
-            if (!responseGroups.has(key)) {
-              responseGroups.set(key, [])
-            }
-            responseGroups.get(key)!.push(item)
-          })
-          
-          // Transform grouped data to frontend format
-          const transformedRules: Rule[] = Array.from(responseGroups.entries()).map(([responseKey, items], index) => {
+          // Transform the new API format (rules with keywords array) to frontend format
+          const transformedRules: Rule[] = result.data.data.pairs.map((item: any, index: number) => {
             // Split comma-separated responses into separate Response objects
-            const responsesArray = responseKey.split(', ').map((responseText: string) => ({
+            const responsesArray = item.response.split(', ').map((responseText: string) => ({
               text: responseText.trim()
             }))
             
-            // Collect all keywords for this response group
-            const keywords = items.map(item => item.keyword)
-            const firstItem = items[0]
+            // Use the keywords array directly
+            const keywords = item.keywords || []
             
             return {
-              id: firstItem.id,
-              name: keywords.length > 1 ? `${keywords[0]} และอีก ${keywords.length - 1} คำ` : keywords[0],
-              keywords: keywords, // Multiple keywords
+              id: item.id,
+              name: keywords.length > 1 ? `${keywords[0]} และอีก ${keywords.length - 1} คำ` : (keywords[0] || `รายการที่ ${index + 1}`),
+              keywords: keywords, // Multiple keywords from the keywords array
               responses: responsesArray, // Multiple responses from comma-separated string
-              enabled: firstItem.is_active,
+              enabled: item.is_active,
               expanded: false,
               selectedPages: ['fb1', 'fb2'], // Default pages
-              hideAfterReply: false,
-              sendToInbox: false,
-              inboxMessage: '',
-              inboxImage: undefined,
+              hideAfterReply: item.hide_after_reply || false,
+              sendToInbox: item.send_to_inbox || false,
+              inboxMessage: item.inbox_message || '',
+              inboxImage: item.inbox_image || undefined,
               hasManuallyEditedTitle: false
             }
           })
@@ -272,94 +260,54 @@ const FacebookCommentMultiPage = () => {
       // Check if this is a new rule (timestamp-based ID) or existing rule
       const isNewRule = rule.id > 1000000000000 // Timestamp-based IDs are much larger
 
+      const keywords = rule.keywords.filter(k => k.trim() !== '')
+      const responses = rule.responses.filter(r => r.text.trim() !== '')
+      const responseText = responses.map(r => r.text).join(', ')
+      
+      const payload = {
+        rule_name: rule.name || '',
+        keywords: keywords, // Send keywords as an array
+        response: responseText, // All responses as a comma-separated string
+        is_active: rule.enabled,
+        priority: 1,
+        match_type: 'contains',
+        hide_after_reply: rule.hideAfterReply || false,
+        send_to_inbox: rule.sendToInbox || false,
+        inbox_message: rule.inboxMessage || '',
+        inbox_image: rule.inboxImage || ''
+      }
+
       if (isNewRule) {
-        // For new rules, create multiple records for each keyword-response combination
-        const keywords = rule.keywords.filter(k => k.trim() !== '')
-        const responses = rule.responses.filter(r => r.text.trim() !== '')
-        
-        if (keywords.length === 0) {
-          keywords.push(rule.name) // Use rule name as fallback
+        // Create new rule
+        const response = await fetch('/api/rules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        })
+        if (!response.ok) {
+          throw new Error('Failed to save rule to database')
         }
-        if (responses.length === 0) {
-          responses.push({ text: 'ขอบคุณสำหรับข้อความครับ' }) // Default response
-        }
-
-        // Create a record for each keyword (all keywords will have all responses available)
-        for (const keyword of keywords) {
-          // For each keyword, we'll save with the first response (random selection happens in chatbot logic)
-          const response = await fetch('/api/rules', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pairs: [{
-                keyword: keyword,
-                response: responses.map(r => r.text).join(', '), // Join multiple responses with comma separator
-              }]
-            })
-          })
-
-          if (!response.ok) {
-            throw new Error(`Failed to save keyword "${keyword}" to database`)
-          }
-
-          const result = await response.json()
-          if (!result.success) {
-            throw new Error(result.error || `Failed to save keyword "${keyword}"`)
-          }
+        const result = await response.json()
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save rule')
         }
       } else {
-        // For existing rules, update with multiple keywords and responses
-        const keywords = rule.keywords.filter(k => k.trim() !== '')
-        const responses = rule.responses.filter(r => r.text.trim() !== '')
-        
-        if (keywords.length === 0 || responses.length === 0) {
-          console.warn('Skipping update: rule has no valid keywords or responses')
-          return
-        }
-
-        // Update the existing record with first keyword and combined responses
+        // Update existing rule
         const response = await fetch(`/api/rules/${rule.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            keyword: keywords[0], // First keyword
-            response: responses.map(r => r.text).join(', '), // Join multiple responses with comma
-            is_active: rule.enabled,
-            priority: 1
-          })
+          body: JSON.stringify(payload)
         })
-
         if (!response.ok) {
           throw new Error('Failed to update rule in database')
         }
-
         const result = await response.json()
         if (!result.success) {
           throw new Error(result.error || 'Failed to update rule')
-        }
-
-        // Create additional records for remaining keywords (if any)
-        for (let i = 1; i < keywords.length; i++) {
-          const additionalResponse = await fetch('/api/rules', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              pairs: [{
-                keyword: keywords[i],
-                response: responses.map(r => r.text).join(', '), // ใช้ comma separator เหมือนกับ keyword แรก
-              }]
-            })
-          })
-
-          if (!additionalResponse.ok) {
-            console.warn(`Failed to create additional keyword "${keywords[i]}"`)
-          }
         }
       }
     } catch (error) {

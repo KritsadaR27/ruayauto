@@ -60,11 +60,19 @@ export type RuleData = {
 
 export type Rule = {
   id: number
-  rule: string
+  keywords: string[]
   response: string
   is_active: boolean
+  priority: number
+  match_type: string
   created_at: string
   updated_at: string
+  rule_name: string
+  hide_after_reply: boolean
+  send_to_inbox: boolean
+  inbox_message: string
+  inbox_image: string
+  created_by?: number | null
 }
 
 export type RuleResponse = {

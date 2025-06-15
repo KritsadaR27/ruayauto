@@ -52,6 +52,12 @@ func main() {
 		api.PUT("/rules/:id", ruleHandler.UpdateRule)
 		api.DELETE("/rules/:id", ruleHandler.DeleteRule)
 		
+		// Rule responses management (Modern Random Response System)
+		api.GET("/rules/:id/responses", ruleHandler.GetRuleResponses)
+		api.POST("/rules/:id/responses", ruleHandler.CreateRuleResponse)
+		api.PUT("/rules/:id/responses/:response_id", ruleHandler.UpdateRuleResponse)
+		api.DELETE("/rules/:id/responses/:response_id", ruleHandler.DeleteRuleResponse)
+		
 		// Messages for AI analysis
 		api.GET("/messages", messageHandler.GetMessages)
 	}

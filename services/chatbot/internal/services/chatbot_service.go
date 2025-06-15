@@ -81,7 +81,7 @@ func (s *ChatbotService) ProcessMessage(ctx context.Context, req *models.AutoRep
 	}
 
 	if rateLimited {
-		log.Printf("Rate limited for user %s, rule %s", req.UserID, rule.Keyword)
+		log.Printf("Rate limited for user %s, keywords %v", req.UserID, rule.Keywords)
 		// Update analytics for trigger but no response
 		s.ruleRepo.UpdateRuleAnalytics(ctx, rule.ID, pageID, true, false)
 		return &models.AutoReplyResponse{ShouldReply: false}, nil
@@ -137,7 +137,7 @@ func (s *ChatbotService) ProcessMessage(ctx context.Context, req *models.AutoRep
 	return &models.AutoReplyResponse{
 		ShouldReply:    true,
 		Response:       selectedResponse,
-		MatchedKeyword: rule.Keyword,
+		MatchedKeyword: strings.Join(rule.Keywords, ", "),
 		MatchType:      rule.MatchType,
 	}, nil
 }
@@ -181,7 +181,7 @@ func (s *ChatbotService) handleLegacyResponse(ctx context.Context, rule *models.
 	return &models.AutoReplyResponse{
 		ShouldReply:    true,
 		Response:       response,
-		MatchedKeyword: rule.Keyword,
+		MatchedKeyword: strings.Join(rule.Keywords, ", "),
 		MatchType:      rule.MatchType,
 	}, nil
 }
