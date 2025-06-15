@@ -4,12 +4,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.pnpm-store/
 
 # Next.js
 frontend/.next/
 frontend/out/
 frontend/.swc/
 frontend/.cache/
+web/.next/
+web/out/
+web/.swc/
+web/.cache/
+.next/
+out/
+.swc/
 
 # Go
 backend/bin/
@@ -18,6 +26,10 @@ backend/migrate
 backend/tmp/
 backend/internal/*/server
 backend/external/*/server
+services/*/bin/
+services/chatbot/chatbot
+services/webhook/webhook
+services/*/tmp/
 *.exe
 *.exe~
 *.dll
@@ -26,6 +38,10 @@ backend/external/*/server
 *.test
 *.out
 go.work
+go.work.sum
+vendor/
+coverage.out
+coverage.html
 
 # Build outputs
 /dist/
@@ -34,6 +50,9 @@ go.work
 
 # Environment
 .env
+.env.*
+!.env.example
+!.env.sample
 .env.local
 .env.development.local
 .env.test.local
@@ -43,15 +62,34 @@ go.work
 *.db
 *.sqlite
 *.sqlite3
+postgres-data/
+mysql-data/
+mongodb-data/
+redis-data/
+data/
+db-data/
 
 # Docker
 .dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
 
 # IDEs
 .idea/
+.vscode/
 *.swp
 *.swo
 *~
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
 # OS
 .DS_Store
@@ -61,8 +99,109 @@ go.work
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
 # Temporary files
 *.tmp
 *.temp
 /tmp/
+temp/
+*.bak
+*.backup
+*.cache
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+coverage/
+*.coverprofile
+.nyc_output/
+test-results/
+junit.xml
+*.test.js
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm/
+debug.log
+
+# Editor directories and files
+.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.history/
+.ionide/
+
+# Security
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+ssl/
+certs/
+certificates/
+.cert/
+private/
+
+# Uploads
+uploads/
+public/uploads/
+static/uploads/
+media/
+files/
+
+# Generated files
+generated/
+dist/
+build/
+.cache/
+.parcel-cache/
+
+# Package managers
+.yarn/
+.pnp.*
+bower_components/
+
+# Misc
+.turbo/
+.vercel/
+.netlify/
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test/
+.yarn-integrity
+.gradle/
+.sass-cache/
+
+# Python (if any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Terraform (if using)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Secrets
+secrets/
+.secrets/
+config/secrets/
