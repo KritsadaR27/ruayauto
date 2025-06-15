@@ -304,7 +304,7 @@ const FacebookCommentMultiPage = () => {
 
   const addRule = async () => {
     let newRuleIndex = 0
-    
+
     setRules(prevRules => {
       newRuleIndex = prevRules.length
       const newRule: Rule = {

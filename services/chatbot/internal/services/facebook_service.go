@@ -57,7 +57,7 @@ func (s *facebookService) GenerateAuthURL(redirectURI, state string) string {
 	if state != "" {
 		params.Add("state", state)
 	}
-	
+
 	return fmt.Sprintf("%s?%s", baseURL, params.Encode())
 }
 
@@ -237,16 +237,16 @@ func (s *facebookService) ConnectPage(facebookUserID, pageID string) error {
 
 	// Create or update page in database
 	page := &models.FacebookPage{
-		PageID:           pageInfo.ID,
-		FacebookPageID:   &pageInfo.ID,
-		PageName:         pageInfo.Name,
-		Name:             &pageInfo.Name,
-		AccessToken:      &pageInfo.AccessToken,
-		FacebookUserID:   &facebookUserID,
-		IsActive:         true,
-		Connected:        &[]bool{true}[0],
-		Enabled:          &[]bool{true}[0],
-		WebhookVerified:  &[]bool{false}[0],
+		PageID:          pageInfo.ID,
+		FacebookPageID:  &pageInfo.ID,
+		PageName:        pageInfo.Name,
+		Name:            &pageInfo.Name,
+		AccessToken:     &pageInfo.AccessToken,
+		FacebookUserID:  &facebookUserID,
+		IsActive:        true,
+		Connected:       &[]bool{true}[0],
+		Enabled:         &[]bool{true}[0],
+		WebhookVerified: &[]bool{false}[0],
 	}
 
 	return s.facebookRepo.CreatePage(page)

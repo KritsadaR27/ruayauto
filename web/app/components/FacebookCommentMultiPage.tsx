@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import RuleCard from './RuleCard'
+import FacebookAuth from './FacebookAuth'
+import Navigation from './Navigation'
 import { Response } from '../types/rule'
 
 // Custom Icon Components
@@ -127,6 +129,29 @@ const FacebookCommentMultiPage = () => {
 
   const [showPageManager, setShowPageManager] = useState(false)
 
+  // Handle Facebook pages update from FacebookAuth component
+  const handleFacebookPagesUpdate = (pages: any[]) => {
+    console.log('Facebook pages updated:', pages)
+
+    // Sync Facebook Auth pages with our local connected pages
+    if (pages && pages.length > 0) {
+      const updatedPages = pages.map((fbPage, index) => ({
+        id: `fb_${fbPage.id}`, // Use Facebook page ID with prefix
+        name: fbPage.name,
+        pageId: fbPage.id,
+        connected: fbPage.connected || false,
+        enabled: fbPage.connected || false // Enable if connected
+      }))
+
+      // Merge with existing pages (keep existing ones that aren't from Facebook)
+      const existingNonFbPages = connectedPages.filter(page => !page.id.startsWith('fb_'))
+      const mergedPages = [...existingNonFbPages, ...updatedPages]
+
+      setConnectedPages(mergedPages)
+      console.log('Updated connected pages:', mergedPages)
+    }
+  }
+
   // Initialize with empty array and load from database
   const [rules, setRules] = useState<Rule[]>([])
   const [loading, setLoading] = useState(true)
@@ -151,17 +176,17 @@ const FacebookCommentMultiPage = () => {
         console.log('📦 API Response:', result)
         if (result.success && result.data?.data?.pairs) {
           console.log('✅ Found pairs data:', result.data.data.pairs)
-          
+
           // Transform the new API format (rules with keywords array) to frontend format
           const transformedRules: Rule[] = result.data.data.pairs.map((item: any, index: number) => {
             // Split comma-separated responses into separate Response objects
             const responsesArray = item.response.split(', ').map((responseText: string) => ({
               text: responseText.trim()
             }))
-            
+
             // Use the keywords array directly
             const keywords = item.keywords || []
-            
+
             return {
               id: item.id,
               name: keywords.length > 1 ? `${keywords[0]} และอีก ${keywords.length - 1} คำ` : (keywords[0] || `รายการที่ ${index + 1}`),
@@ -259,7 +284,7 @@ const FacebookCommentMultiPage = () => {
       const keywords = rule.keywords.filter(k => k.trim() !== '')
       const responses = rule.responses.filter(r => r.text.trim() !== '')
       const responseText = responses.map(r => r.text).join(', ')
-      
+
       const payload = {
         rule_name: rule.name || '',
         keywords: keywords, // Send keywords as an array
@@ -314,7 +339,7 @@ const FacebookCommentMultiPage = () => {
 
   const addRule = async () => {
     let newRuleIndex = 0
-    
+
     setRules(prevRules => {
       newRuleIndex = prevRules.length
       const newRule: Rule = {
@@ -360,7 +385,7 @@ const FacebookCommentMultiPage = () => {
       console.log('💾 Manually saving rule:', id)
       await saveRuleToDatabase(rule)
       console.log('✅ Rule saved successfully')
-      
+
       // Optional: Show success feedback
       // You could add a toast notification here
     } catch (error) {
@@ -571,6 +596,9 @@ const FacebookCommentMultiPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-6xl mx-auto">
+        {/* Navigation */}
+        <Navigation />
+
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl mb-8 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8">
@@ -583,12 +611,20 @@ const FacebookCommentMultiPage = () => {
                   ตั้งค่าคำตอบอัตโนมัติเมื่อมีคนคอมเมนต์ในเพจของคุณ • พร้อมฟีเจอร์ Auto-Title ใหม่!
                 </p>
               </div>
-              <button
-                onClick={() => setShowPageManager(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                ⚙️ จัดการเพจ
-              </button>
+              <div className="flex space-x-3">
+                <a
+                  href="/facebook-auth"
+                  className="bg-blue-500/20 hover:bg-blue-500/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                >
+                  📘 Facebook Auth
+                </a>
+                <button
+                  onClick={() => setShowPageManager(true)}
+                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  ⚙️ จัดการเพจ
+                </button>
+              </div>
             </div>
           </div>
 
@@ -631,72 +667,138 @@ const FacebookCommentMultiPage = () => {
           </div>
         </div>
 
-        {/* Page Manager Modal */}
+        {/* Page Manager Modal - Now integrated with Facebook Auth */}
         {showPageManager && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-bold">จัดการเพจ Facebook</h2>
                   <button
                     onClick={() => setShowPageManager(false)}
-                    className="text-white hover:text-gray-200"
+                    className="text-white hover:text-gray-200 text-2xl"
                   >
                     ✕
                   </button>
                 </div>
+                <p className="text-blue-100 mt-2">
+                  เชื่อมต่อและจัดการ Facebook Pages ของคุณ
+                </p>
               </div>
 
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-                <div className="space-y-3">
-                  {connectedPages.map(page => (
-                    <div key={page.id} className={`border rounded-lg p-4 ${page.connected ? 'border-gray-200' : 'border-gray-300 bg-gray-50'
-                      }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => {
-                              const updatedPages = connectedPages.map(p =>
-                                p.id === page.id ? { ...p, enabled: !p.enabled } : p
-                              )
-                              setConnectedPages(updatedPages)
-                            }}
-                            disabled={!page.connected}
-                            className={`w-12 h-6 rounded-full transition-colors duration-200 ${page.enabled && page.connected ? 'bg-green-500' : 'bg-gray-300'
-                              } ${!page.connected ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${page.enabled && page.connected ? 'translate-x-6' : 'translate-x-0.5'
-                              }`} />
-                          </button>
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                {/* Facebook Auth Integration */}
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">🔐 Facebook Authentication</h3>
+                  <p className="text-sm text-blue-700 mb-3">
+                    เชื่อมต่อกับ Facebook เพื่อดึงรายการเพจและจัดการสิทธิ์การเข้าถึง
+                  </p>
+                  <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
+                    <p className="text-xs text-green-700">
+                      ✅ <strong>Production Mode:</strong> ระบบใช้ Facebook API จริง ไม่มี Mock Data แล้ว
+                      <br />
+                      📋 <strong>Requirements:</strong> ต้องตั้งค่า FACEBOOK_APP_ID และ FACEBOOK_APP_SECRET ใน environment variables
+                    </p>
+                  </div>
+                </div>
 
-                          <div>
-                            <div className="font-medium">{page.name}</div>
-                            <div className="text-sm text-gray-500">Page ID: {page.pageId}</div>
+                <FacebookAuth onPagesUpdate={handleFacebookPagesUpdate} />
+
+                {/* Divider */}
+                <div className="my-8 border-t border-gray-200 relative">
+                  <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-sm text-gray-500">
+                    การตั้งค่าเพจในระบบ
+                  </span>
+                </div>
+
+                {/* Current Connected Pages from Local State */}
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">⚙️ เพจที่ตั้งค่าไว้ในระบบ</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      จัดการเพจที่จะใช้สำหรับระบบตอบกลับอัตโนมัติ เปิด/ปิดการใช้งานแต่ละเพจ
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {connectedPages.map(page => (
+                      <div key={page.id} className={`border rounded-lg p-4 ${page.connected ? 'border-gray-200' : 'border-gray-300 bg-gray-50'
+                        }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <button
+                              onClick={() => {
+                                const updatedPages = connectedPages.map(p =>
+                                  p.id === page.id ? { ...p, enabled: !p.enabled } : p
+                                )
+                                setConnectedPages(updatedPages)
+                              }}
+                              disabled={!page.connected}
+                              className={`w-12 h-6 rounded-full transition-colors duration-200 ${page.enabled && page.connected ? 'bg-green-500' : 'bg-gray-300'
+                                } ${!page.connected ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ${page.enabled && page.connected ? 'translate-x-6' : 'translate-x-0.5'
+                                }`} />
+                            </button>
+
+                            <div>
+                              <div className="font-medium">{page.name}</div>
+                              <div className="text-sm text-gray-500">Page ID: {page.pageId}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            {page.connected ? (
+                              <span className="text-sm text-green-600 flex items-center">
+                                <CheckIcon />
+                                <span className="ml-1">เชื่อมต่อแล้ว</span>
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  // Update connection status
+                                  const updatedPages = connectedPages.map(p =>
+                                    p.id === page.id ? { ...p, connected: true } : p
+                                  )
+                                  setConnectedPages(updatedPages)
+                                }}
+                                className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                              >
+                                เชื่อมต่อ
+                              </button>
+                            )}
+                            <button
+                              onClick={() => {
+                                // Remove page from list
+                                const updatedPages = connectedPages.filter(p => p.id !== page.id)
+                                setConnectedPages(updatedPages)
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <TrashIcon />
+                            </button>
                           </div>
                         </div>
-
-                        <div className="flex items-center space-x-2">
-                          {page.connected ? (
-                            <span className="text-sm text-green-600 flex items-center">
-                              <CheckIcon />
-                              <span className="ml-1">เชื่อมต่อแล้ว</span>
-                            </span>
-                          ) : (
-                            <button className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                              เชื่อมต่อ
-                            </button>
-                          )}
-                          <button className="text-red-500 hover:text-red-700">
-                            <TrashIcon />
-                          </button>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
-                  <button className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500">
-                    + เพิ่มเพจใหม่
-                  </button>
+                    <button
+                      onClick={() => {
+                        // Add new page functionality
+                        const newPageId = `fb${Date.now()}`
+                        const newPage = {
+                          id: newPageId,
+                          name: `เพจใหม่ ${connectedPages.length + 1}`,
+                          pageId: `${Math.random().toString().slice(2, 8)}`,
+                          connected: false,
+                          enabled: false
+                        }
+                        setConnectedPages([...connectedPages, newPage])
+                      }}
+                      className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                    >
+                      + เพิ่มเพจใหม่
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

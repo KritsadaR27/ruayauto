@@ -27,7 +27,7 @@ func NewClient(channelToken string) *Client {
 // ReplyMessage sends a reply message to LINE
 func (c *Client) ReplyMessage(replyToken, message string) (*LineAPIResponse, error) {
 	url := fmt.Sprintf("%s/message/reply", c.baseURL)
-	
+
 	payload := LineReplyMessage{
 		ReplyToken: replyToken,
 		Messages: []LineTextMessage{
@@ -37,42 +37,42 @@ func (c *Client) ReplyMessage(replyToken, message string) (*LineAPIResponse, err
 			},
 		},
 	}
-	
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonPayload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.channelToken)
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	var apiResp LineAPIResponse
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("API error: status %d", resp.StatusCode)
 	}
-	
+
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	
+
 	return &apiResp, nil
 }
 
 // PushMessage sends a push message to LINE user
 func (c *Client) PushMessage(userID, message string) (*LineAPIResponse, error) {
 	url := fmt.Sprintf("%s/message/push", c.baseURL)
-	
+
 	payload := LinePushMessage{
 		To: userID,
 		Messages: []LineTextMessage{
@@ -82,63 +82,63 @@ func (c *Client) PushMessage(userID, message string) (*LineAPIResponse, error) {
 			},
 		},
 	}
-	
+
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
-	
+
 	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonPayload))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.channelToken)
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	var apiResp LineAPIResponse
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("API error: status %d", resp.StatusCode)
 	}
-	
+
 	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	
+
 	return &apiResp, nil
 }
 
 // GetProfile gets LINE user profile
 func (c *Client) GetProfile(userID string) (*LineProfile, error) {
 	url := fmt.Sprintf("%s/profile/%s", c.baseURL, userID)
-	
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+c.channelToken)
-	
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("API error: status %d", resp.StatusCode)
 	}
-	
+
 	var profile LineProfile
 	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
-	
+
 	return &profile, nil
 }

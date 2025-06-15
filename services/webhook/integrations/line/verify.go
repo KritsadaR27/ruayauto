@@ -17,11 +17,11 @@ func VerifyWebhook(payload []byte, signature string, channelSecret string) error
 	mac := hmac.New(sha256.New, []byte(channelSecret))
 	mac.Write(payload)
 	expectedSig := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	
+
 	// Compare signatures
 	if !hmac.Equal([]byte(signature), []byte(expectedSig)) {
 		return errors.New("signature verification failed")
 	}
-	
+
 	return nil
 }

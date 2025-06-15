@@ -5,13 +5,13 @@ services:
     ports:
       - "5532:5432"
     environment:
-      - POSTGRES_DB=ruay_chatbot
-      - POSTGRES_USER=ruay_user
-      - POSTGRES_PASSWORD=ruay_password
+      - POSTGRES_DB=${DB_NAME:-ruay_chatbot}
+      - POSTGRES_USER=${DB_USER:-ruay_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-ruay_password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ruay_user -d ruay_chatbot" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-ruay_user} -d ${DB_NAME:-ruay_chatbot}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,13 +27,15 @@ services:
     ports:
       - "8090:8090"
     environment:
-      - GIN_MODE=release
-      - LOG_LEVEL=info
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=ruay_user
-      - DB_PASSWORD=ruay_password
-      - DB_NAME=ruay_chatbot
+      - GIN_MODE=${GIN_MODE:-release}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-ruay_user}
+      - DB_PASSWORD=${DB_PASSWORD:-ruay_password}
+      - DB_NAME=${DB_NAME:-ruay_chatbot}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
     depends_on:
       postgres:
         condition: service_healthy
@@ -54,18 +56,18 @@ services:
     ports:
       - "8091:8091"
     environment:
-      - GIN_MODE=release
-      - LOG_LEVEL=info
+      - GIN_MODE=${GIN_MODE:-release}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
       - WEBHOOK_PORT=8091
       - WEBHOOK_HOST=0.0.0.0
       - CHATBOT_URL=http://chatbot:8090
       - FACEBOOK_ENABLED=true
-      - FACEBOOK_VERIFY_TOKEN=ruayAutoMsgFACEBOOK_VERIFY_TOKEN
-      - FACEBOOK_PAGE_TOKEN=EAAXdo9949QMBO15NPZBwoJ6Y0U0bY7U4C1rnmh5aIh8tMCKXPnwMKGVTjUBd2hRwz183kGqTUQ35fLTTDeFx8riOV1QwZAZCAIFTIOYVSwRrgxuMdRIFqZCPev2GFsI2L5qKR17DnY7VvAUEG84caEXmMmlQArBoi30Vd32b9WxK0fQFpzF1qMHOEyrS5K5nJBdlfM3EK1hJrxGUiwZDZD
-      - FACEBOOK_APP_SECRET=2e8f5d891c01ff56ecf2a662dfa2c9ea
+      - FACEBOOK_VERIFY_TOKEN=${FACEBOOK_VERIFY_TOKEN}
+      - FACEBOOK_PAGE_TOKEN=${FACEBOOK_PAGE_ACCESS_TOKEN}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
       - LINE_ENABLED=false
-      - LINE_CHANNEL_SECRET=placeholder
-      - LINE_CHANNEL_TOKEN=placeholder
+      - LINE_CHANNEL_SECRET=${LINE_CHANNEL_SECRET:-placeholder}
+      - LINE_CHANNEL_TOKEN=${LINE_CHANNEL_TOKEN:-placeholder}
     depends_on:
       - chatbot
     healthcheck:
@@ -88,6 +90,12 @@ services:
       - NODE_ENV=development  # เปลี่ยนเป็น development สำหรับ hot reload
       - NEXT_PUBLIC_API_URL=http://chatbot:8090
       - NEXT_PUBLIC_WEBPACK_URL=http://webhook:8091
+      - NEXT_PUBLIC_FACEBOOK_APP_ID=${NEXT_PUBLIC_FACEBOOK_APP_ID}
+      - FACEBOOK_APP_ID=${FACEBOOK_APP_ID}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - CHATBOT_API_URL=http://chatbot:8090
     volumes:
       # Mount source code สำหรับ development
       - ./web:/app

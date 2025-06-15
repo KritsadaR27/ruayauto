@@ -128,7 +128,7 @@ func (h *RuleHandler) GetRuleResponses(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data": responses,
+		"data":    responses,
 	})
 }
 
@@ -155,7 +155,7 @@ func (h *RuleHandler) CreateRuleResponse(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
-		"data": response,
+		"data":    response,
 	})
 }
 
@@ -182,7 +182,7 @@ func (h *RuleHandler) UpdateRuleResponse(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data": response,
+		"data":    response,
 	})
 }
 

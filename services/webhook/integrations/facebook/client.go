@@ -31,7 +31,7 @@ func (c *Client) SendComment(commentID, message string) (*FacebookAPIResponse, e
 	url := fmt.Sprintf("%s/%s/comments", c.baseURL, commentID)
 
 	payload := map[string]string{
-		"message":     message,
+		"message":      message,
 		"access_token": c.pageToken,
 	}
 
@@ -100,9 +100,9 @@ func (c *Client) SendCommentWithImage(commentID, message, imageURL string) (*Fac
 	url := fmt.Sprintf("%s/%s/comments", c.baseURL, commentID)
 
 	payload := map[string]interface{}{
-		"message":      message,
+		"message":        message,
 		"attachment_url": imageURL,
-		"access_token": c.pageToken,
+		"access_token":   c.pageToken,
 	}
 
 	jsonPayload, err := json.Marshal(payload)

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"chatbot/internal/models"
 	"chatbot/internal/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 type FacebookHandler struct {
@@ -33,7 +34,7 @@ func (h *FacebookHandler) AuthLogin(c *gin.Context) {
 	}
 
 	authURL := h.facebookService.GenerateAuthURL(req.RedirectURI, req.State)
-	
+
 	c.JSON(http.StatusOK, models.FacebookOAuthResponse{
 		AuthURL: authURL,
 		State:   req.State,
@@ -43,7 +44,7 @@ func (h *FacebookHandler) AuthLogin(c *gin.Context) {
 func (h *FacebookHandler) AuthCallback(c *gin.Context) {
 	code := c.Query("code")
 	state := c.Query("state")
-	
+
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization code is required"})
 		return
@@ -51,7 +52,7 @@ func (h *FacebookHandler) AuthCallback(c *gin.Context) {
 
 	// For now, use a default redirect URI - this should be configurable
 	redirectURI := "http://localhost:3008/auth/facebook/callback"
-	
+
 	session, err := h.facebookService.HandleCallback(code, state, redirectURI)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process callback: " + err.Error()})
@@ -214,7 +215,7 @@ func (h *FacebookHandler) WebhookReceive(c *gin.Context) {
 	// Log the webhook payload for debugging
 	payloadJSON, _ := json.MarshalIndent(payload, "", "  ")
 	c.Header("Content-Type", "application/json")
-	
+
 	// For now, just acknowledge receipt
 	// In production, this would process the webhook and trigger responses
 	c.JSON(http.StatusOK, gin.H{

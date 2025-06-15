@@ -55,34 +55,65 @@ export default function FacebookAuth({ onPagesUpdate }: FacebookAuthProps) {
 
   const checkAuthStatus = async () => {
     try {
+      setError(null)
       const response = await fetch('/api/auth/facebook/status')
       if (response.ok) {
         const data = await response.json()
-        setIsAuthenticated(data.authenticated)
-        setUser(data.user)
+        setIsAuthenticated(data.authenticated || false)
+        setUser(data.user || null)
         if (data.authenticated) {
           loadPages()
+        } else {
+          setPages([])
+          onPagesUpdate([])
         }
+      } else {
+        console.error('Failed to check auth status')
+        setIsAuthenticated(false)
+        setUser(null)
+        setPages([])
+        onPagesUpdate([])
       }
     } catch (error) {
       console.error('Failed to check auth status:', error)
+      setIsAuthenticated(false)
+      setUser(null)
+      setPages([])
+      onPagesUpdate([])
     }
   }
 
   const loadPages = async () => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch('/api/facebook/pages')
+      
       if (response.ok) {
         const data = await response.json()
-        setPages(data.pages || [])
-        onPagesUpdate(data.pages || [])
+        if (data.success) {
+          setPages(data.pages || [])
+          onPagesUpdate(data.pages || [])
+        } else {
+          setError(data.error || 'Failed to load pages')
+          setPages([])
+          onPagesUpdate([])
+        }
+      } else if (response.status === 401) {
+        setError('Please authenticate with Facebook first')
+        setPages([])
+        onPagesUpdate([])
       } else {
-        setError('Failed to load pages')
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Failed to load pages')
+        setPages([])
+        onPagesUpdate([])
       }
     } catch (error) {
       console.error('Failed to load pages:', error)
-      setError('Failed to load pages')
+      setError('Unable to connect to server')
+      setPages([])
+      onPagesUpdate([])
     } finally {
       setLoading(false)
     }
@@ -91,8 +122,8 @@ export default function FacebookAuth({ onPagesUpdate }: FacebookAuthProps) {
   const handleLogin = () => {
     const params = new URLSearchParams({
       client_id: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
-      redirect_uri: `${window.location.origin}/auth/facebook/callback`,
-      scope: 'pages_manage_comments,pages_read_engagement,pages_show_list',
+      redirect_uri: `${window.location.origin}/api/auth/facebook/callback`,
+      scope: 'pages_show_list,pages_read_engagement,pages_manage_metadata',
       response_type: 'code',
       state: Math.random().toString(36).substring(7)
     })
@@ -124,6 +155,7 @@ export default function FacebookAuth({ onPagesUpdate }: FacebookAuthProps) {
   const connectPage = async (pageId: string) => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch('/api/facebook/pages/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,13 +163,21 @@ export default function FacebookAuth({ onPagesUpdate }: FacebookAuthProps) {
       })
 
       if (response.ok) {
-        loadPages() // Reload pages
+        const data = await response.json()
+        if (data.success) {
+          loadPages() // Reload pages
+        } else {
+          setError(data.error || 'Failed to connect page')
+        }
+      } else if (response.status === 401) {
+        setError('Please authenticate with Facebook first')
       } else {
-        setError('Failed to connect page')
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Failed to connect page')
       }
     } catch (error) {
       console.error('Failed to connect page:', error)
-      setError('Failed to connect page')
+      setError('Unable to connect to server')
     } finally {
       setLoading(false)
     }
@@ -146,18 +186,27 @@ export default function FacebookAuth({ onPagesUpdate }: FacebookAuthProps) {
   const disconnectPage = async (pageId: string) => {
     try {
       setLoading(true)
+      setError(null)
       const response = await fetch(`/api/facebook/pages/${pageId}`, {
         method: 'DELETE'
       })
 
       if (response.ok) {
-        loadPages() // Reload pages
+        const data = await response.json()
+        if (data.success) {
+          loadPages() // Reload pages
+        } else {
+          setError(data.error || 'Failed to disconnect page')
+        }
+      } else if (response.status === 401) {
+        setError('Please authenticate with Facebook first')
       } else {
-        setError('Failed to disconnect page')
+        const errorData = await response.json().catch(() => ({}))
+        setError(errorData.error || 'Failed to disconnect page')
       }
     } catch (error) {
       console.error('Failed to disconnect page:', error)
-      setError('Failed to disconnect page')
+      setError('Unable to connect to server')
     } finally {
       setLoading(false)
     }
@@ -274,14 +323,33 @@ export default function FacebookAuth({ onPagesUpdate }: FacebookAuthProps) {
                 <span className="ml-2">Loading pages...</span>
               </div>
             ) : pages.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>No pages found. Make sure you have admin access to Facebook pages.</p>
-                <button
-                  onClick={loadPages}
-                  className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-                >
-                  Reload Pages
-                </button>
+              <div className="text-center py-8">
+                <div className="text-gray-500 mb-4">
+                  <p className="text-lg mb-2">📄 No Facebook pages found</p>
+                  <p className="text-sm">This could happen because:</p>
+                  <ul className="text-xs mt-2 space-y-1 text-left max-w-xs mx-auto">
+                    <li>• You haven't connected to Facebook yet</li>
+                    <li>• You don't have admin access to any pages</li>
+                    <li>• Network connection issues</li>
+                    <li>• Facebook API is temporarily unavailable</li>
+                  </ul>
+                </div>
+                <div className="space-x-3">
+                  <button
+                    onClick={loadPages}
+                    disabled={loading}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    🔄 Reload Pages
+                  </button>
+                  <button
+                    onClick={checkAuthStatus}
+                    disabled={loading}
+                    className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    🔐 Check Auth
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-3">

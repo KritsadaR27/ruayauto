@@ -16,8 +16,8 @@ import (
 
 // WebhookHandler handles all platform webhooks
 type WebhookHandler struct {
-	facebook      *facebook.Handler
-	line          *line.Handler
+	facebook       *facebook.Handler
+	line           *line.Handler
 	webhookService *service.WebhookService
 }
 
@@ -29,7 +29,7 @@ func NewWebhookHandler(
 ) *WebhookHandler {
 	return &WebhookHandler{
 		facebook:       facebook.NewHandler(fbVerifyToken, fbPageToken, fbAppSecret),
-		line:          line.NewHandler(lineChannelSecret, lineChannelToken),
+		line:           line.NewHandler(lineChannelSecret, lineChannelToken),
 		webhookService: webhookService,
 	}
 }
@@ -81,7 +81,7 @@ func (h *WebhookHandler) handleFacebookEvent(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
 	}
-	
+
 	// Reset body for potential re-reading
 	c.Request.Body = io.NopCloser(bytes.NewReader(body))
 

@@ -1,97 +1,97 @@
 export type Response = {
-  id?: number
-  text: string
-  image?: string // URL or base64 image for this specific response
-  response_type?: 'text' | 'image' | 'video' | 'composite'
-  media_url?: string
-  has_media?: boolean
-  media_description?: string
-  weight?: number // Weight for random selection (higher = more likely)
-  is_active?: boolean
+    id?: number
+    text: string
+    image?: string // URL or base64 image for this specific response
+    response_type?: 'text' | 'image' | 'video' | 'composite'
+    media_url?: string
+    has_media?: boolean
+    media_description?: string
+    weight?: number // Weight for random selection (higher = more likely)
+    is_active?: boolean
 }
 
 export type ConnectedPage = {
-  id: string
-  name: string
-  pageId: string
-  connected: boolean
-  enabled: boolean
+    id: string
+    name: string
+    pageId: string
+    connected: boolean
+    enabled: boolean
 }
 
 export type RulePair = {
-  id?: string // Add unique ID for each pair
-  title?: string // Custom title for each pair 
-  hasManuallyEditedTitle?: boolean // Track if user manually edited title
-  rules: string[]
-  responses: Response[]
-  hideCommentsAfterReply?: boolean
-  enableInboxIntegration?: boolean
-  inboxResponse?: string
-  inboxImage?: string
-  enabled?: boolean
-  expanded?: boolean
-  selectedPages?: string[]
+    id?: string // Add unique ID for each pair
+    title?: string // Custom title for each pair 
+    hasManuallyEditedTitle?: boolean // Track if user manually edited title
+    rules: string[]
+    responses: Response[]
+    hideCommentsAfterReply?: boolean
+    enableInboxIntegration?: boolean
+    inboxResponse?: string
+    inboxImage?: string
+    enabled?: boolean
+    expanded?: boolean
+    selectedPages?: string[]
 }
 
 export type FilterSettings = {
-  skipMentions: boolean
-  skipStickers: boolean
+    skipMentions: boolean
+    skipStickers: boolean
 }
 
 export type FallbackSettings = {
-  enabled: boolean
-  responses: Response[]
-  selectedPages?: string[]
-  hideAfterReply?: boolean
-  sendToInbox?: boolean
-  inboxMessage?: string
-  inboxImage?: string
+    enabled: boolean
+    responses: Response[]
+    selectedPages?: string[]
+    hideAfterReply?: boolean
+    sendToInbox?: boolean
+    inboxMessage?: string
+    inboxImage?: string
 }
 
 export type Settings = {
-  defaultResponses: string[]
-  enableDefault: boolean
-  noTag: boolean
-  noSticker: boolean
-  hideCommentsAfterReply: boolean
-  enableInboxIntegration: boolean
-  inboxResponse: string
-  inboxImage?: string
-  filterSettings: FilterSettings
-  fallbackSettings: FallbackSettings
+    defaultResponses: string[]
+    enableDefault: boolean
+    noTag: boolean
+    noSticker: boolean
+    hideCommentsAfterReply: boolean
+    enableInboxIntegration: boolean
+    inboxResponse: string
+    inboxImage?: string
+    filterSettings: FilterSettings
+    fallbackSettings: FallbackSettings
 }
 
 export type RuleData = {
-  rules: RulePair[]
+    rules: RulePair[]
 } & Settings
 
 export type Rule = {
-  id: number
-  keywords: string[]
-  response: string
-  is_active: boolean
-  priority: number
-  match_type: string
-  created_at: string
-  updated_at: string
-  rule_name: string
-  hide_after_reply: boolean
-  send_to_inbox: boolean
-  inbox_message: string
-  inbox_image: string
-  created_by?: number | null
+    id: number
+    keywords: string[]
+    response: string
+    is_active: boolean
+    priority: number
+    match_type: string
+    created_at: string
+    updated_at: string
+    rule_name: string
+    hide_after_reply: boolean
+    send_to_inbox: boolean
+    inbox_message: string
+    inbox_image: string
+    created_by?: number | null
 }
 
 export type RuleResponse = {
-  pairs: Rule[]
-  total?: number
-  success?: boolean
+    pairs: Rule[]
+    total?: number
+    success?: boolean
 }
 
 export type ApiResponse<T = any> = {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
-  timestamp?: string
+    success: boolean
+    data?: T
+    error?: string
+    message?: string
+    timestamp?: string
 }

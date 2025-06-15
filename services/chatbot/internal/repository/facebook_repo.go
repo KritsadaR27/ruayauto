@@ -3,8 +3,9 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/jmoiron/sqlx"
 	"chatbot/internal/models"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type FacebookRepository interface {

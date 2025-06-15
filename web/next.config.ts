@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
 
   // Output configuration for Docker deployment
   output: 'standalone',
-  
+
   // Bundle analyzer (optional)
   env: {
     NEXT_TELEMETRY_DISABLED: '1',

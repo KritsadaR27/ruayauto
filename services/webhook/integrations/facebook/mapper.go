@@ -9,7 +9,7 @@ import (
 // MapToUnifiedMessage converts Facebook webhook data to UnifiedMessage
 func MapToUnifiedMessage(entry FacebookEntry, change FacebookChange) *model.UnifiedMessage {
 	value := change.Value
-	
+
 	// Create base unified message
 	unified := &model.UnifiedMessage{
 		Platform:    model.PlatformFacebook,
@@ -19,18 +19,18 @@ func MapToUnifiedMessage(entry FacebookEntry, change FacebookChange) *model.Unif
 		MessageType: getMessageType(change.Field, value.Verb),
 		Timestamp:   time.Unix(value.CreatedTime, 0),
 		Metadata: map[string]interface{}{
-			"verb":       value.Verb,
-			"field":      change.Field,
-			"user_name":  value.From.Name,
+			"verb":      value.Verb,
+			"field":     change.Field,
+			"user_name": value.From.Name,
 		},
 	}
-	
+
 	// Set platform-specific IDs based on the type of event
 	if change.Field == "comments" {
 		unified.CommentID = value.CommentID
 		unified.PostID = value.PostID
 		unified.ID = value.CommentID
-		
+
 		// Handle comment replies
 		if value.ParentID != "" {
 			unified.Metadata["parent_id"] = value.ParentID
@@ -40,7 +40,7 @@ func MapToUnifiedMessage(entry FacebookEntry, change FacebookChange) *model.Unif
 		unified.PostID = value.PostID
 		unified.ID = value.PostID
 	}
-	
+
 	return unified
 }
 
@@ -82,7 +82,7 @@ func MapFromUnifiedResponse(response *model.ChatbotResponse, originalMsg *model.
 		"platform":     "facebook",
 		"should_reply": response.ShouldReply,
 	}
-	
+
 	if response.ShouldReply {
 		result["response"] = response.Response
 		result["has_media"] = response.HasMedia
@@ -90,7 +90,7 @@ func MapFromUnifiedResponse(response *model.ChatbotResponse, originalMsg *model.
 			result["media_description"] = *response.MediaDescription
 		}
 		result["matched_keyword"] = response.MatchedKeyword
-		
+
 		// Set target based on message type
 		if originalMsg.CommentID != "" {
 			result["target_type"] = "comment"
@@ -100,6 +100,6 @@ func MapFromUnifiedResponse(response *model.ChatbotResponse, originalMsg *model.
 			result["target_id"] = originalMsg.UserID
 		}
 	}
-	
+
 	return result
 }

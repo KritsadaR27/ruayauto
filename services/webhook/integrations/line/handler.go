@@ -30,15 +30,15 @@ func (h *Handler) HandleWebhook(payload []byte, signature string) ([]*model.Unif
 	if err := VerifyWebhook(payload, signature, h.channelSecret); err != nil {
 		return nil, fmt.Errorf("webhook verification failed: %w", err)
 	}
-	
+
 	// Parse LINE webhook payload
 	var linePayload LineWebhookPayload
 	if err := json.Unmarshal(payload, &linePayload); err != nil {
 		return nil, fmt.Errorf("failed to parse LINE payload: %w", err)
 	}
-	
+
 	var messages []*model.UnifiedMessage
-	
+
 	// Process each event
 	for _, event := range linePayload.Events {
 		if shouldProcessEvent(event) {
@@ -46,7 +46,7 @@ func (h *Handler) HandleWebhook(payload []byte, signature string) ([]*model.Unif
 			messages = append(messages, unified)
 		}
 	}
-	
+
 	return messages, nil
 }
 
@@ -55,9 +55,9 @@ func (h *Handler) SendResponse(response *model.ChatbotResponse, originalMsg *mod
 	if !response.ShouldReply {
 		return nil
 	}
-	
+
 	var err error
-	
+
 	// Send reply using reply token if available
 	if originalMsg.ReplyToken != "" {
 		_, err = h.client.ReplyMessage(originalMsg.ReplyToken, response.Response)
@@ -75,7 +75,7 @@ func (h *Handler) SendResponse(response *model.ChatbotResponse, originalMsg *mod
 		}
 		log.Printf("Sent LINE push message to user %s", originalMsg.UserID)
 	}
-	
+
 	return nil
 }
 

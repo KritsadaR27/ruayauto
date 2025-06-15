@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"chatbot/internal/models"
 	"chatbot/internal/repository"
+
+	"github.com/gin-gonic/gin"
 )
 
 type KeywordHandler struct {
@@ -25,7 +26,7 @@ func (h *KeywordHandler) GetKeywords(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
@@ -42,12 +43,12 @@ func (h *KeywordHandler) CreateKeyword(c *gin.Context) {
 		Response string `json:"response" binding:"required"`
 		Priority int    `json:"priority"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	keyword := &models.Keyword{
 		Keyword:   req.Keyword,
 		Response:  req.Response,
@@ -55,15 +56,15 @@ func (h *KeywordHandler) CreateKeyword(c *gin.Context) {
 		Priority:  req.Priority,
 		MatchType: "contains", // default match type
 	}
-	
+
 	if err := h.repo.Create(c.Request.Context(), keyword); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
-		"data": keyword,
+		"data":    keyword,
 	})
 }
 
@@ -74,42 +75,42 @@ func (h *KeywordHandler) UpdateKeyword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid keyword ID"})
 		return
 	}
-	
+
 	var req struct {
 		Keyword  string `json:"keyword"`
 		Response string `json:"response"`
 		IsActive *bool  `json:"is_active"`
 		Priority int    `json:"priority"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Printf("❌ Update keyword bind error: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	log.Printf("📝 Updating keyword %d with data: %+v", id, req)
-	
+
 	keyword := &models.Keyword{
 		ID:       id,
 		Keyword:  req.Keyword,
 		Response: req.Response,
 		Priority: req.Priority,
 	}
-	
+
 	if req.IsActive != nil {
 		keyword.IsActive = *req.IsActive
 	}
-	
+
 	if err := h.repo.Update(c.Request.Context(), keyword); err != nil {
 		log.Printf("❌ Update keyword DB error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data": keyword,
+		"data":    keyword,
 	})
 }
 
@@ -120,12 +121,12 @@ func (h *KeywordHandler) DeleteKeyword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid keyword ID"})
 		return
 	}
-	
+
 	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "keyword deleted successfully",
@@ -140,18 +141,18 @@ func (h *KeywordHandler) BulkCreateKeywords(c *gin.Context) {
 			Response string `json:"response"`
 		} `json:"pairs"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	// First, clear existing keywords to avoid duplicates
 	if err := h.repo.DeleteAll(c.Request.Context()); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to clear existing keywords"})
 		return
 	}
-	
+
 	// Create new keywords
 	var keywords []*models.Keyword
 	for i, pair := range req.Pairs {
@@ -162,15 +163,15 @@ func (h *KeywordHandler) BulkCreateKeywords(c *gin.Context) {
 			Priority:  i + 1,
 			MatchType: "contains",
 		}
-		
+
 		if err := h.repo.Create(c.Request.Context(), keyword); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		keywords = append(keywords, keyword)
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{

@@ -25,7 +25,7 @@ func (r *KeywordRepository) GetActive(ctx context.Context) ([]*models.Keyword, e
 		WHERE is_active = true
 		ORDER BY priority DESC, created_at ASC
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (r *KeywordRepository) FindMatching(ctx context.Context, content string) ([
 
 	for _, keyword := range keywords {
 		keywordText := strings.ToLower(strings.TrimSpace(keyword.Keyword))
-		
+
 		switch keyword.MatchType {
 		case "exact":
 			if content == keywordText {
@@ -98,15 +98,15 @@ func (r *KeywordRepository) Create(ctx context.Context, keyword *models.Keyword)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
 		RETURNING id, created_at, updated_at
 	`
-	
+
 	err := r.db.QueryRowContext(
 		ctx, query,
-		keyword.Keyword, keyword.Response, keyword.IsActive, 
+		keyword.Keyword, keyword.Response, keyword.IsActive,
 		keyword.Priority, keyword.MatchType, keyword.RuleName,
 		keyword.HideAfterReply, keyword.SendToInbox, keyword.InboxMessage,
 		keyword.InboxImage,
 	).Scan(&keyword.ID, &keyword.CreatedAt, &keyword.UpdatedAt)
-	
+
 	// Set created_by to nil since we don't have users table yet
 	keyword.CreatedBy = nil
 	return err
@@ -121,15 +121,15 @@ func (r *KeywordRepository) Update(ctx context.Context, keyword *models.Keyword)
 		WHERE id = $1
 		RETURNING updated_at
 	`
-	
+
 	err := r.db.QueryRowContext(
 		ctx, query,
-		keyword.ID, keyword.Keyword, keyword.Response, 
+		keyword.ID, keyword.Keyword, keyword.Response,
 		keyword.IsActive, keyword.Priority, keyword.MatchType,
 		keyword.RuleName, keyword.HideAfterReply, keyword.SendToInbox,
 		keyword.InboxMessage, keyword.InboxImage,
 	).Scan(&keyword.UpdatedAt)
-	
+
 	return err
 }
 
@@ -152,7 +152,7 @@ func (r *KeywordRepository) GetByID(ctx context.Context, id int) (*models.Keywor
 		FROM keywords 
 		WHERE id = $1
 	`
-	
+
 	keyword := &models.Keyword{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&keyword.ID, &keyword.Keyword, &keyword.Response,
@@ -161,11 +161,11 @@ func (r *KeywordRepository) GetByID(ctx context.Context, id int) (*models.Keywor
 		&keyword.RuleName, &keyword.HideAfterReply, &keyword.SendToInbox,
 		&keyword.InboxMessage, &keyword.InboxImage,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Set created_by to nil since we don't have users table yet
 	keyword.CreatedBy = nil
 	return keyword, nil
@@ -182,21 +182,21 @@ func (r *KeywordRepository) GetKeywordWithResponses(ctx context.Context, keyword
 		FROM keywords_with_responses
 		WHERE id = $1
 	`
-	
+
 	kwr := &models.KeywordWithResponses{}
 	var responsesJSON, pageIDsJSON string
-	
+
 	err := r.db.QueryRowContext(ctx, query, keywordID).Scan(
 		&kwr.ID, &kwr.Keyword, &kwr.DefaultMessage, &kwr.RuleName,
 		&kwr.HideAfterReply, &kwr.SendToInbox, &kwr.InboxMessage, &kwr.InboxImage,
 		&kwr.IsActive, &kwr.Priority, &kwr.CreatedBy, &kwr.CreatedAt, &kwr.UpdatedAt,
 		&responsesJSON, &pageIDsJSON,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Parse JSON responses and page IDs would go here
 	// For now, return the basic structure
 	return kwr, nil
@@ -209,13 +209,13 @@ func (r *KeywordRepository) CreateKeywordResponse(ctx context.Context, response 
 		VALUES ($1, $2, $3, $4, $5, $6, NOW())
 		RETURNING id, created_at
 	`
-	
+
 	err := r.db.QueryRowContext(
 		ctx, query,
 		response.KeywordID, response.ResponseText, response.ResponseType,
 		response.MediaURL, response.Weight, response.IsActive,
 	).Scan(&response.ID, &response.CreatedAt)
-	
+
 	return err
 }
 
@@ -227,7 +227,7 @@ func (r *KeywordRepository) GetKeywordResponses(ctx context.Context, keywordID i
 		WHERE keyword_id = $1 AND is_active = true
 		ORDER BY weight DESC, created_at ASC
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query, keywordID)
 	if err != nil {
 		return nil, err
@@ -254,7 +254,7 @@ func (r *KeywordRepository) GetKeywordResponses(ctx context.Context, keywordID i
 func (r *KeywordRepository) GetFallbackResponses(ctx context.Context, pageID *int) ([]*models.FallbackResponse, error) {
 	var query string
 	var args []interface{}
-	
+
 	if pageID != nil {
 		query = `
 			SELECT id, page_id, response_text, response_type, media_url, weight, is_active, created_at
@@ -271,7 +271,7 @@ func (r *KeywordRepository) GetFallbackResponses(ctx context.Context, pageID *in
 			ORDER BY weight DESC, created_at ASC
 		`
 	}
-	
+
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -302,14 +302,14 @@ func (r *KeywordRepository) CheckRateLimit(ctx context.Context, pageID int, user
 		WHERE page_id = $1 AND user_id = $2 AND keyword_id = $3
 		  AND last_response_at > NOW() - INTERVAL '%d minutes'
 	`
-	
+
 	var count int
 	formattedQuery := fmt.Sprintf(query, limitMinutes)
 	err := r.db.QueryRowContext(ctx, formattedQuery, pageID, userID, keywordID).Scan(&count)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return count > 0, nil
 }
 
@@ -324,12 +324,12 @@ func (r *KeywordRepository) UpdateRateLimit(ctx context.Context, rateLimit *mode
 			response_count = rate_limits.response_count + 1
 		RETURNING id, last_response_at, response_count, created_at
 	`
-	
+
 	err := r.db.QueryRowContext(
 		ctx, query,
 		rateLimit.PageID, rateLimit.UserID, rateLimit.KeywordID, rateLimit.ResponseCount,
 	).Scan(&rateLimit.ID, &rateLimit.LastResponseAt, &rateLimit.ResponseCount, &rateLimit.CreatedAt)
-	
+
 	return err
 }
 
@@ -342,13 +342,13 @@ func (r *KeywordRepository) LogIncomingMessage(ctx context.Context, msg *models.
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 		RETURNING id, created_at
 	`
-	
+
 	err := r.db.QueryRowContext(
 		ctx, query,
 		msg.PageID, msg.UserID, msg.MessageText, msg.CommentID, msg.PostID,
 		msg.MatchedKeywordID, msg.ResponseSent, msg.HiddenComment, msg.SentToInbox,
 	).Scan(&msg.ID, &msg.CreatedAt)
-	
+
 	return err
 }
 
@@ -363,7 +363,7 @@ func (r *KeywordRepository) UpdateRuleAnalytics(ctx context.Context, keywordID, 
 			response_count = rule_analytics.response_count + $4,
 			last_triggered_at = CASE WHEN $3 > 0 THEN NOW() ELSE rule_analytics.last_triggered_at END
 	`
-	
+
 	triggerCount := 0
 	responseCount := 0
 	if triggered {
@@ -372,7 +372,7 @@ func (r *KeywordRepository) UpdateRuleAnalytics(ctx context.Context, keywordID, 
 	if responded {
 		responseCount = 1
 	}
-	
+
 	_, err := r.db.ExecContext(ctx, query, keywordID, pageID, triggerCount, responseCount)
 	return err
 }
@@ -384,11 +384,11 @@ func (r *KeywordRepository) UpdateIncomingMessage(ctx context.Context, msg *mode
 		SET matched_keyword_id = $2, response_sent = $3, hidden_comment = $4, sent_to_inbox = $5
 		WHERE id = $1
 	`
-	
+
 	_, err := r.db.ExecContext(
 		ctx, query,
 		msg.ID, msg.MatchedKeywordID, msg.ResponseSent, msg.HiddenComment, msg.SentToInbox,
 	)
-	
+
 	return err
 }

@@ -28,7 +28,7 @@ export async function saveRuleData(data: KeywordData): Promise<ApiResponse> {
     }
 
     const result = await response.json()
-    
+
     return {
       success: true,
       data: result,
@@ -61,7 +61,7 @@ export async function loadRuleData(): Promise<ApiResponse<KeywordData>> {
     }
 
     const result = await response.json()
-    
+
     // Transform backend data to frontend format
     const transformedData: KeywordData = {
       pairs: result.pairs?.map((item: any) => ({
@@ -78,7 +78,7 @@ export async function loadRuleData(): Promise<ApiResponse<KeywordData>> {
       filterSettings: { skipMentions: false, skipStickers: false },
       fallbackSettings: { enabled: false, responses: [{ text: '' }] }
     }
-    
+
     return {
       success: true,
       data: transformedData,
@@ -108,7 +108,7 @@ export async function checkSystemHealth(): Promise<ApiResponse> {
     }
 
     const healthData = await response.json()
-    
+
     return {
       success: true,
       data: {

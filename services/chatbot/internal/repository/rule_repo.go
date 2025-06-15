@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
 	"chatbot/internal/models"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type RuleRepository struct {

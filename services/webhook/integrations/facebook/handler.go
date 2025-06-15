@@ -37,15 +37,15 @@ func (h *Handler) HandleWebhook(payload []byte, signature string) ([]*model.Unif
 	if err := VerifyWebhook(payload, signature, h.appSecret); err != nil {
 		return nil, fmt.Errorf("webhook verification failed: %w", err)
 	}
-	
+
 	// Parse Facebook webhook payload
 	var fbPayload FacebookWebhookPayload
 	if err := json.Unmarshal(payload, &fbPayload); err != nil {
 		return nil, fmt.Errorf("failed to parse Facebook payload: %w", err)
 	}
-	
+
 	var messages []*model.UnifiedMessage
-	
+
 	// Process each entry
 	for _, entry := range fbPayload.Entry {
 		// Process changes (comments, posts)
@@ -55,7 +55,7 @@ func (h *Handler) HandleWebhook(payload []byte, signature string) ([]*model.Unif
 				messages = append(messages, unified)
 			}
 		}
-		
+
 		// Process direct messages
 		for _, messaging := range entry.Messaging {
 			if messaging.Message.Text != "" {
@@ -64,7 +64,7 @@ func (h *Handler) HandleWebhook(payload []byte, signature string) ([]*model.Unif
 			}
 		}
 	}
-	
+
 	return messages, nil
 }
 
@@ -73,9 +73,9 @@ func (h *Handler) SendResponse(response *model.ChatbotResponse, originalMsg *mod
 	if !response.ShouldReply {
 		return nil
 	}
-	
+
 	var err error
-	
+
 	// Send comment reply
 	if originalMsg.CommentID != "" {
 		// Check if this is a composite response (text + media)
@@ -116,7 +116,7 @@ func (h *Handler) SendResponse(response *model.ChatbotResponse, originalMsg *mod
 			log.Printf("Sent Facebook message to user %s", originalMsg.UserID)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -126,7 +126,7 @@ func shouldProcessChange(change FacebookChange) bool {
 	if change.Field == "comments" && change.Value.Verb == "add" {
 		return true
 	}
-	
+
 	// Can add more conditions for posts, reactions, etc.
 	return false
 }

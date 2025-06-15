@@ -19,19 +19,19 @@ func VerifyWebhook(payload []byte, signature string, appSecret string) error {
 	if !strings.HasPrefix(signature, "sha256=") {
 		return errors.New("invalid signature format")
 	}
-	
+
 	expectedSig := strings.TrimPrefix(signature, "sha256=")
-	
+
 	// Calculate expected signature
 	mac := hmac.New(sha256.New, []byte(appSecret))
 	mac.Write(payload)
 	calculatedSig := hex.EncodeToString(mac.Sum(nil))
-	
+
 	// Compare signatures
 	if !hmac.Equal([]byte(expectedSig), []byte(calculatedSig)) {
 		return fmt.Errorf("signature verification failed")
 	}
-	
+
 	return nil
 }
 

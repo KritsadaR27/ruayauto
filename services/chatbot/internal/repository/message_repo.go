@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 
-	"github.com/jmoiron/sqlx"
 	"chatbot/internal/models"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type MessageRepository struct {
@@ -21,13 +22,13 @@ func (r *MessageRepository) Create(ctx context.Context, message *models.Message)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
 		RETURNING id, created_at, updated_at
 	`
-	
+
 	err := r.db.QueryRowContext(
 		ctx, query,
 		message.Platform, message.UserID, message.PageID, message.Content,
 		message.CommentID, message.PostID, message.MessageType, message.Processed, message.Response,
 	).Scan(&message.ID, &message.CreatedAt, &message.UpdatedAt)
-	
+
 	return err
 }
 
@@ -38,7 +39,7 @@ func (r *MessageRepository) GetAll(ctx context.Context, limit int) ([]*models.Me
 		ORDER BY created_at DESC
 		LIMIT $1
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query, limit)
 	if err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func (r *MessageRepository) GetByPlatform(ctx context.Context, platform string, 
 		ORDER BY created_at DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query, platform, limit)
 	if err != nil {
 		return nil, err
@@ -98,7 +99,7 @@ func (r *MessageRepository) MarkProcessed(ctx context.Context, id int, response 
 		SET processed = true, response = $2, updated_at = NOW()
 		WHERE id = $1
 	`
-	
+
 	_, err := r.db.ExecContext(ctx, query, id, response)
 	return err
 }

@@ -15,42 +15,42 @@ const (
 
 // UnifiedMessage represents a standardized message across all platforms
 type UnifiedMessage struct {
-	ID          string            `json:"id"`
-	Platform    Platform          `json:"platform"`
-	UserID      string            `json:"user_id"`
-	PageID      string            `json:"page_id"`
-	Content     string            `json:"content"`
-	MessageType MessageType       `json:"message_type"`
-	Timestamp   time.Time         `json:"timestamp"`
+	ID          string                 `json:"id"`
+	Platform    Platform               `json:"platform"`
+	UserID      string                 `json:"user_id"`
+	PageID      string                 `json:"page_id"`
+	Content     string                 `json:"content"`
+	MessageType MessageType            `json:"message_type"`
+	Timestamp   time.Time              `json:"timestamp"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	
+
 	// Platform-specific IDs
-	CommentID   string `json:"comment_id,omitempty"`   // Facebook
-	PostID      string `json:"post_id,omitempty"`      // Facebook/Instagram
-	ReplyToken  string `json:"reply_token,omitempty"`  // LINE
-	TweetID     string `json:"tweet_id,omitempty"`     // Twitter
-	VideoID     string `json:"video_id,omitempty"`     // TikTok
+	CommentID  string `json:"comment_id,omitempty"`  // Facebook
+	PostID     string `json:"post_id,omitempty"`     // Facebook/Instagram
+	ReplyToken string `json:"reply_token,omitempty"` // LINE
+	TweetID    string `json:"tweet_id,omitempty"`    // Twitter
+	VideoID    string `json:"video_id,omitempty"`    // TikTok
 }
 
 // MessageType represents different types of messages
 type MessageType string
 
 const (
-	MessageTypeText     MessageType = "text"
-	MessageTypeImage    MessageType = "image"
-	MessageTypeVideo    MessageType = "video"
-	MessageTypeSticker  MessageType = "sticker"
-	MessageTypeComment  MessageType = "comment"
-	MessageTypeReply    MessageType = "reply"
+	MessageTypeText    MessageType = "text"
+	MessageTypeImage   MessageType = "image"
+	MessageTypeVideo   MessageType = "video"
+	MessageTypeSticker MessageType = "sticker"
+	MessageTypeComment MessageType = "comment"
+	MessageTypeReply   MessageType = "reply"
 )
 
 // WebhookEvent represents incoming webhook events
 type WebhookEvent struct {
-	Platform    Platform    `json:"platform"`
-	EventType   string      `json:"event_type"`
-	Timestamp   time.Time   `json:"timestamp"`
-	RawData     interface{} `json:"raw_data"`
-	Signature   string      `json:"signature,omitempty"`
+	Platform  Platform    `json:"platform"`
+	EventType string      `json:"event_type"`
+	Timestamp time.Time   `json:"timestamp"`
+	RawData   interface{} `json:"raw_data"`
+	Signature string      `json:"signature,omitempty"`
 }
 
 // ChatbotRequest represents request to chatbot service
@@ -75,16 +75,16 @@ type ChatbotResponse struct {
 
 // PlatformConfig represents configuration for each platform
 type PlatformConfig struct {
-	Enabled      bool              `json:"enabled"`
-	Credentials  map[string]string `json:"credentials"`
-	WebhookPath  string            `json:"webhook_path"`
-	VerifyToken  string            `json:"verify_token,omitempty"`
+	Enabled     bool              `json:"enabled"`
+	Credentials map[string]string `json:"credentials"`
+	WebhookPath string            `json:"webhook_path"`
+	VerifyToken string            `json:"verify_token,omitempty"`
 }
 
 // WebhookConfig represents overall webhook configuration
 type WebhookConfig struct {
-	Port      string                    `json:"port"`
-	Host      string                    `json:"host"`
-	Platforms map[Platform]PlatformConfig `json:"platforms"`
-	ChatbotURL string                   `json:"chatbot_url"`
+	Port       string                      `json:"port"`
+	Host       string                      `json:"host"`
+	Platforms  map[Platform]PlatformConfig `json:"platforms"`
+	ChatbotURL string                      `json:"chatbot_url"`
 }

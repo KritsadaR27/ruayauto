@@ -22,7 +22,7 @@ func MapToUnifiedMessage(event LineEvent) *model.UnifiedMessage {
 			"source_type":      event.Source.Type,
 		},
 	}
-	
+
 	// Set PageID based on source type
 	switch event.Source.Type {
 	case "user":
@@ -34,14 +34,14 @@ func MapToUnifiedMessage(event LineEvent) *model.UnifiedMessage {
 		unified.PageID = event.Source.RoomID
 		unified.Metadata["room_id"] = event.Source.RoomID
 	}
-	
+
 	// Handle sticker messages
 	if event.Message.Type == "sticker" {
 		unified.Content = "[Sticker]"
 		unified.Metadata["package_id"] = event.Message.PackageID
 		unified.Metadata["sticker_id"] = event.Message.StickerID
 	}
-	
+
 	return unified
 }
 
@@ -67,13 +67,13 @@ func MapFromUnifiedResponse(response *model.ChatbotResponse, originalMsg *model.
 		"platform":     "line",
 		"should_reply": response.ShouldReply,
 	}
-	
+
 	if response.ShouldReply {
 		result["response"] = response.Response
 		result["matched_keyword"] = response.MatchedKeyword
 		result["reply_token"] = originalMsg.ReplyToken
 		result["target_user"] = originalMsg.UserID
 	}
-	
+
 	return result
 }

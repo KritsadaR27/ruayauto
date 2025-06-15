@@ -15,10 +15,10 @@ import (
 
 // WebhookService handles webhook business logic
 type WebhookService struct {
-	chatbotURL    string
-	facebook      *facebook.Handler
-	line          *line.Handler
-	httpClient    *http.Client
+	chatbotURL string
+	facebook   *facebook.Handler
+	line       *line.Handler
+	httpClient *http.Client
 }
 
 // NewWebhookService creates a new webhook service
@@ -37,7 +37,7 @@ func NewWebhookService(
 
 // ProcessMessage processes a unified message
 func (s *WebhookService) ProcessMessage(msg *model.UnifiedMessage) error {
-	log.Printf("Processing message from %s platform, user: %s, content: %s", 
+	log.Printf("Processing message from %s platform, user: %s, content: %s",
 		msg.Platform, msg.UserID, msg.Content)
 
 	// Send to chatbot service

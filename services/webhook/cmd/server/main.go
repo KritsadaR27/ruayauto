@@ -82,7 +82,7 @@ func main() {
 		if cfg.Line.Enabled {
 			api.POST("/line", webhookHandler.HandleLINEWebhook)
 		}
-		
+
 		// Placeholder endpoints for future platforms
 		api.POST("/instagram", webhookHandler.HandleInstagramWebhook)
 		api.POST("/tiktok", webhookHandler.HandleTikTokWebhook)

@@ -1,5 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Helper function to store user session and pages via backend
+async function storeUserSessionInBackend(userData: any, accessToken: string, pagesData: any[]) {
+  try {
+    const response = await fetch(`${process.env.CHATBOT_API_URL}/api/facebook/auth/callback`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        user: userData,
+        access_token: accessToken,
+        pages: pagesData
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to store session in backend')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error storing session in backend:', error)
+    throw error
+  }
+}
+
+// Helper function to create user session
+async function createUserSession(userData: any): Promise<string> {
+  // TODO: Implement actual session creation (JWT, cookies, etc.)
+  // For now, return a mock session ID
+  return `session_${userData.id}_${Date.now()}`
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -23,7 +56,7 @@ export async function GET(request: NextRequest) {
       body: new URLSearchParams({
         client_id: process.env.FACEBOOK_APP_ID!,
         client_secret: process.env.FACEBOOK_APP_SECRET!,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/auth/facebook/callback`,
+        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/facebook/callback`,
         code
       })
     })
@@ -36,19 +69,30 @@ export async function GET(request: NextRequest) {
 
     // Get user information
     const userResponse = await fetch(`https://graph.facebook.com/v18.0/me?access_token=${tokenData.access_token}&fields=id,name,email`)
+    if (!userResponse.ok) {
+      throw new Error('Failed to get user information')
+    }
     const userData = await userResponse.json()
 
     // Get user's pages
     const pagesResponse = await fetch(`https://graph.facebook.com/v18.0/me/accounts?access_token=${tokenData.access_token}&fields=id,name,access_token`)
+    if (!pagesResponse.ok) {
+      throw new Error('Failed to get user pages')
+    }
     const pagesData = await pagesResponse.json()
 
-    // Store user session and pages
-    // TODO: Implement actual session storage
-    // await storeUserSession(userData, tokenData.access_token, pagesData.data)
+    // Store user session and pages in backend
+    await storeUserSessionInBackend(userData, tokenData.access_token, pagesData.data || [])
 
-    // For development, log the data
+    // Create frontend session
+    const sessionId = await createUserSession(userData)
+
+    // TODO: Set session cookie
+    // cookies().set('session_id', sessionId, { httpOnly: true, secure: true })
+
     console.log('Facebook OAuth Success:', {
-      user: userData,
+      user: userData.name,
+      userId: userData.id,
       pages: pagesData.data?.length || 0
     })
 

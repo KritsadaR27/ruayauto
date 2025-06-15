@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"chatbot/internal/repository"
+
+	"github.com/gin-gonic/gin"
 )
 
 type MessageHandler struct {
@@ -23,24 +24,24 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	if err != nil {
 		limit = 100
 	}
-	
+
 	platform := c.Query("platform")
-	
+
 	var messages interface{}
 	if platform != "" {
 		messages, err = h.repo.GetByPlatform(c.Request.Context(), platform, limit)
 	} else {
 		messages, err = h.repo.GetAll(c.Request.Context(), limit)
 	}
-	
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": messages,
+		"success":   true,
+		"data":      messages,
 		"timestamp": "now",
 	})
 }
