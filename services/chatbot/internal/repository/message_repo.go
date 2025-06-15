@@ -2,16 +2,16 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/jmoiron/sqlx"
 	"chatbot/internal/models"
 )
 
 type MessageRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewMessageRepository(db *sql.DB) *MessageRepository {
+func NewMessageRepository(db *sqlx.DB) *MessageRepository {
 	return &MessageRepository{db: db}
 }
 

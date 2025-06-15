@@ -5,18 +5,18 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
 	"chatbot/internal/models"
 )
 
 type RuleRepository struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewRuleRepository(db *sql.DB) *RuleRepository {
+func NewRuleRepository(db *sqlx.DB) *RuleRepository {
 	return &RuleRepository{db: db}
 }
 
